@@ -11,6 +11,13 @@ updates:
       default-days: 7
     commit-message:
       prefix: chore(deps)
+    ignore:
+      # typescript-eslint supports typescript <6.1 (ADR 0001).
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Type definitions must match the Node 24 runtime in .node-version.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       dev-minor-and-patch:
         dependency-type: development
