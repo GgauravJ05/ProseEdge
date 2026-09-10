@@ -1,0 +1,31 @@
+name: Nightly
+
+# Deep property testing: 100x the PR budget. A failure prints the seed and
+# shrink path; replay locally with FC_SEED and FC_PATH (see tests/setup.ts).
+on:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: fast-check runs per property
+        default: '20000'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  properties:
+    name: Deep property tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup
+      # Vitest's 5 s per-test default is sized for the PR budget.
+      - run: pnpm test --testTimeout=3600000
+        env:
+          FC_NUM_RUNS: ${{ inputs.runs || '20000' }}

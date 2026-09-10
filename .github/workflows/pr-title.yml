@@ -1,0 +1,48 @@
+name: PR title
+
+# Squash merges use the PR title as the commit message, and release-please
+# reads those commits. So the title, not each commit, must be conventional.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional:
+    name: Conventional PR title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            test
+            docs
+            build
+            ci
+            chore
+            revert
+          scopes: |
+            document
+            analysis
+            runtime
+            ui
+            app
+            training
+            eval
+            bench
+            docs
+            ci
+            deps
+            main
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: Start the subject with a lowercase letter.

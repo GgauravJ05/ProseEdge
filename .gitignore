@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+out/
+dist/
+.wrangler/
+*.tsbuildinfo
+next-env.d.ts
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ML artifacts: weights and raw data are published, never committed (spec §5.1)
+*.onnx
+*.safetensors
+*.pt
+*.bin
+training/data/raw/
+training/data/interim/
+training/runs/
+wandb/
+mlruns/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp

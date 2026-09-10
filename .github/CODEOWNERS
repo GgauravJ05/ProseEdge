@@ -1,0 +1,3 @@
+# Default owner for everything. Required review is off while the project has
+# one maintainer (a PR author cannot approve their own PR); CI is the gate.
+* @GgauravJ05

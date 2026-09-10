@@ -1,0 +1,9 @@
+pnpm-lock.yaml
+LICENSE
+coverage/
+out/
+.next/
+src/**/__fixtures__/*.txt
+CHANGELOG.md
+# Authored research document; formatted by hand.
+docs/architecture-spec.md

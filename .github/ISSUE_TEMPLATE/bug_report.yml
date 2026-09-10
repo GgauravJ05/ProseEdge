@@ -1,0 +1,27 @@
+name: Bug report
+description: Something renders, normalizes or scores incorrectly
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the exact input text. For Unicode issues, paste the codepoints (e.g. U+1D400) as well as the characters.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: For a failing property test, include the seed and path fast-check printed.
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, OS and screen reader (if relevant)
+      placeholder: Chrome 140, macOS 26, VoiceOver

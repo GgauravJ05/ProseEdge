@@ -1,0 +1,11 @@
+# Dependency install policy (supply-chain hardening, ADR 0001).
+
+# Only packages listed here may run install scripts. lefthook's postinstall is
+# unnecessary: its platform binary ships as an optional dependency and hooks are
+# installed by the `prepare` script.
+allowBuilds:
+  lefthook: false
+
+# Refuse versions published less than a day ago. Pin an older release rather
+# than adding exclusions.
+minimumReleaseAge: 1440

@@ -1,0 +1,23 @@
+name: Proposal
+description: A change to the spec, a new measurement, or a feature
+labels: [proposal]
+body:
+  - type: input
+    id: section
+    attributes:
+      label: Spec section
+      description: Which part of docs/architecture-spec.md this touches
+      placeholder: §6.2
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: measurement
+    attributes:
+      label: How would we know it worked?
+      description: The metric or test that would confirm or falsify this. Proposals without one are unlikely to be accepted (spec §0).
+    validations:
+      required: true

@@ -1,0 +1,19 @@
+# Local fast feedback only. CI is the gate; these hooks can be skipped with
+# LEFTHOOK=0 and nothing unsafe reaches main.
+#
+# Binaries are called from node_modules/.bin rather than through pnpm, so hooks
+# also work in GUI git clients whose PATH has no pnpm shim.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: format
+      glob: '*.{ts,tsx,js,mjs,json,md,yml,yaml,css}'
+      run: node_modules/.bin/prettier --check --ignore-unknown {staged_files}
+    - name: lint
+      glob: '*.{ts,tsx,js,mjs}'
+      run: node_modules/.bin/eslint --max-warnings=0 --no-warn-ignored {staged_files}
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: node_modules/.bin/commitlint --edit {1}
