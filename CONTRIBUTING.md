@@ -16,6 +16,9 @@ pnpm check             # typecheck, lint, format check, tests with coverage
 
 | Command                     | Does                                    |
 | :-------------------------- | :-------------------------------------- |
+| `pnpm dev`                  | Next.js dev server                      |
+| `pnpm build`                | Static export to `out/`                 |
+| `pnpm e2e`                  | Playwright against `out/` (build first) |
 | `pnpm test:watch`           | Vitest in watch mode                    |
 | `pnpm test:coverage`        | Full test run with coverage report      |
 | `pnpm lint` / `pnpm format` | ESLint (zero warnings) / Prettier write |
