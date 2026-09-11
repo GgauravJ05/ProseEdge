@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-or-later",
   "author": "Gaurav Jadhav <gauravmakarandjadhav@gmail.com>",
   "type": "module",
-  "packageManager": "pnpm@12.3.4",
+  "packageManager": "pnpm@11.26.0",
   "engines": {
     "node": ">=24"
   },
