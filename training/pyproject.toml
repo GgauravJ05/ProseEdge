@@ -6,6 +6,9 @@ license = "AGPL-3.0-or-later"
 requires-python = ">=3.13,<3.14"
 dependencies = []
 
+[project.scripts]
+proseedge-data = "proseedge_training.data.cli:main"
+
 [dependency-groups]
 dev = [
   "hypothesis==6.168.0",
