@@ -57,6 +57,51 @@ describe('fromText', () => {
       [' opening', []],
     ]);
   });
+
+  it('takes a two-line opening when a blank line follows it', () => {
+    const hookLines = (text: string): string[] => {
+      const [hook] = fromText(text).sections;
+      return hook?.kind === 'hook' ? hook.paragraphs.map(paragraphText) : [];
+    };
+    expect(hookLines('one\ntwo\n\nbody')).toEqual(['one', 'two']);
+    expect(hookLines('one\n\nbody')).toEqual(['one']);
+    expect(hookLines('one\ntwo\nthree\n\nbody')).toEqual(['one']);
+    expect(hookLines('\nbody')).toEqual(['']);
+  });
+
+  it('reads the renderer’s list markers back as lists', () => {
+    const doc = fromText('Opening\n\n• 𝐅𝐚𝐬𝐭\n• small\n1. one\n2. two\n4. four\n- dash');
+    const [, body] = doc.sections;
+    expect(body?.kind).toBe('body');
+    if (body?.kind !== 'body') return;
+    expect(
+      body.blocks.map((block) =>
+        block.kind === 'list'
+          ? [block.marker, block.items.map(paragraphText)]
+          : ['paragraph', paragraphText(block)],
+      ),
+    ).toEqual([
+      ['paragraph', ''],
+      ['bullet', ['Fast', 'small']],
+      ['numbered', ['one', 'two']],
+      ['paragraph', '4. four'],
+      ['paragraph', '- dash'],
+    ]);
+  });
+
+  it('turns a final line that is only a URL into the call to action', () => {
+    const doc = fromText('Opening\nRead more:\n𝐡𝐭𝐭𝐩𝐬://example.com/post');
+    expect(doc.sections.map((s) => s.kind)).toEqual(['hook', 'body', 'cta']);
+    const cta = doc.sections.at(-1);
+    expect(cta?.kind === 'cta' && cta.content.kind === 'link' ? cta.content.url : null).toBe(
+      'https://example.com/post',
+    );
+    expect(fromText('https://example.com').sections.map((s) => s.kind)).toEqual(['hook']);
+    expect(fromText('Opening\nsee https://example.com').sections.map((s) => s.kind)).toEqual([
+      'hook',
+      'body',
+    ]);
+  });
 });
 
 describe('toLf', () => {
