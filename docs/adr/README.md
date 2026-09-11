@@ -10,6 +10,7 @@ accepted; a changed decision gets a new record that supersedes the old one.
 | [0002](0002-document-grammar-and-provenance.md)          | Document grammar ordering, separators and provenance | Accepted                                            |
 | [0003](0003-private-repository.md)                       | Private repository on a free plan                    | Accepted                                            |
 | [0005](0005-hacker-news-collection-and-author-strata.md) | Hacker News collection and author strata             | Accepted                                            |
+| [0006](0006-stratified-pairs-and-time-splits.md)         | Stratified pairs and time-based splits               | Accepted                                            |
 
 New record: copy the section headings of the latest one, take the next number,
 and open it in the same PR as the change it justifies.
