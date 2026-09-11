@@ -5,8 +5,8 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
 import * as arb from '../document/__fixtures__/arbitraries';
-import { builder, render, sequentialIds } from '../document';
-import { coverageMarks, postStats, segments } from './checks';
+import { builder, fromText, render, sequentialIds } from '../document';
+import { coverageMarks, postStats, segments, structureOf } from './checks';
 
 const b = builder(sequentialIds());
 
@@ -53,6 +53,19 @@ describe('coverageMarks', () => {
         ).toBe(result.output);
       }),
     );
+  });
+});
+
+describe('structureOf', () => {
+  it('reports the opening, lists and a closing link', () => {
+    expect(structureOf(fromText('Hook'))).toEqual({ openingLines: 1, lists: 0, link: false });
+    expect(structureOf(fromText('One\nTwo\n\n• a\n• b\ntext\n1. x\nhttps://example.com'))).toEqual({
+      openingLines: 2,
+      lists: 2,
+      link: true,
+    });
+    const paragraphCta = b.document(b.hook(b.paragraph('Hook')), b.cta(b.paragraph('Comment')));
+    expect(structureOf(paragraphCta).link).toBe(false);
   });
 });
 

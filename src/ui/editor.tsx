@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
+import { readability } from '../analysis/readability';
 import {
   clearStyles,
   fromText,
@@ -16,8 +17,8 @@ import {
   sourceOffsetAt,
   sourceText,
 } from '../document';
-import type { Document, TextRange } from '../document';
-import { coverageMarks, postStats, segments } from './checks';
+import type { Document, ListMarker, TextRange } from '../document';
+import { coverageMarks, postStats, segments, structureOf } from './checks';
 import {
   FAMILIES,
   applyEdit,
@@ -28,6 +29,7 @@ import {
 } from './commands';
 import type { Emphasis, Family } from './commands';
 import { browserDrafts } from './draft';
+import { toggleList } from './lists';
 
 const SAMPLE = [
   'Unicode "bold" is not rich text.',
@@ -43,6 +45,9 @@ const FAMILY_LABELS: Readonly<Record<Family, string>> = {
   monospace: 'Mono',
 };
 
+/** Below this, a Flesch–Kincaid grade swings too much to be worth showing. */
+const READING_MIN_WORDS = 20;
+
 const count = (n: number, one: string, many: string): string =>
   `${String(n)} ${n === 1 ? one : many}`;
 
@@ -51,6 +56,12 @@ interface Selection {
   readonly start: number;
   readonly end: number;
 }
+
+/** Source offsets of a UTF-16 range in a textarea value, which only ever contains line feeds. */
+const toSource = (value: string, start: number, end: number): Selection => ({
+  start: normalize(value.slice(0, start)).length,
+  end: normalize(value.slice(0, end)).length,
+});
 
 /**
  * A textarea over the rendered post. Every edit goes through `applyEdit`, so the
@@ -112,6 +123,8 @@ export function Editor() {
   const [onlyFamily] = state.families.size === 1 ? [...state.families] : [];
 
   const stats = useMemo(() => postStats(result.output), [result]);
+  const structure = useMemo(() => structureOf(doc), [doc]);
+  const reading = useMemo(() => readability(sourceText(doc)), [doc]);
   // Punctuation and emoji are never styled, which is expected; highlight only
   // letters and digits a font could not reach, which make the post look mixed.
   const gaps = useMemo(
@@ -130,8 +143,24 @@ export function Editor() {
     setDoc(next);
   };
 
+  /** Replace the post with edited text, keeping `selected` (source offsets) selected. */
+  const edit = (text: string, selected: Selection) => {
+    const next = applyEdit(doc, result, text);
+    if (next === doc) return;
+    pending.current = selected;
+    setDoc(next);
+  };
+
   const emphasize = (emphasis: Emphasis) => {
     change((current, selected) => toggleEmphasis(current, selected, emphasis));
+  };
+
+  const list = (marker: ListMarker) => {
+    const el = textarea.current;
+    if (el === null) return;
+    const next = toggleList(el.value, el.selectionStart, el.selectionEnd, marker);
+    el.focus();
+    edit(next.text, toSource(next.text, next.start, next.end));
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -193,6 +222,24 @@ export function Editor() {
             Italic
           </button>
         </div>
+        <div role="group" aria-label="Lists" className="group">
+          <button
+            type="button"
+            onClick={() => {
+              list('bullet');
+            }}
+          >
+            Bulleted list
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              list('numbered');
+            }}
+          >
+            Numbered list
+          </button>
+        </div>
         <div role="group" aria-label="Reset" className="group">
           <button
             type="button"
@@ -228,15 +275,7 @@ export function Editor() {
         onSelect={syncSelection}
         onChange={(event) => {
           const el = event.target;
-          const next = applyEdit(doc, result, el.value);
-          if (next === doc) return;
-          // A textarea value only contains line feeds, so folding styled letters
-          // is all it takes to turn a caret offset into a source offset.
-          pending.current = {
-            start: normalize(el.value.slice(0, el.selectionStart)).length,
-            end: normalize(el.value.slice(0, el.selectionEnd)).length,
-          };
-          setDoc(next);
+          edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
         }}
       />
       <p id={`${id}-hint`} className="hint">
@@ -271,6 +310,16 @@ export function Editor() {
         <p>
           {count(stats.characters, 'character', 'characters')} ·{' '}
           {count(stats.words, 'word', 'words')} · {count(stats.lines, 'line', 'lines')}
+        </p>
+        <p>
+          Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
+          {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
+          {structure.link && ' · ends with a link'}
+        </p>
+        <p>
+          {reading.grade === null || reading.words < READING_MIN_WORDS
+            ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
+            : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
         </p>
         {stats.styled > 0 ? (
           <p className="notice">
