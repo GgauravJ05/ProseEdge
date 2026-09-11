@@ -23,13 +23,16 @@ needs at least page-view counts.
 - **Ship the formatter first.** v0.1 is a Unicode formatter with post checks,
   deployed to a `vercel.app` address. Research features follow as later
   releases (roadmap M2–M6).
-- **Continuous deployment.** Every merge to `main` that passes CI deploys to
-  production through the Deploy workflow (ADR 0004). Pull requests get preview
-  deployments. release-please tags milestones; tags do not gate deploys.
-- **Feature flags.** Unfinished features merge behind build-time flags
-  (`NEXT_PUBLIC_FLAG_*`, read in one module), because the app is a static export
-  with no server. Previews enable every flag; production enables shipped ones.
-  A flag is removed once its feature ships.
+- **Continuous deployment.** Every merge to `main` deploys to production through
+  the Vercel GitHub integration (ADR 0004). `main` only receives pull requests
+  whose CI passed, so production is gated by the merge rule rather than by the
+  deploy. Every pull request gets a preview deployment. release-please tags
+  milestones; tags do not gate deploys.
+- **Feature flags.** Unfinished features merge behind build-time flags read in
+  one module, because the app is a static export with no server. Previews and
+  local development enable every flag, detected from Vercel's `VERCEL_ENV` at
+  build time; production enables shipped ones. A flag is removed once its
+  feature ships.
 - **Research features are gated on evaluation.** The accessibility score, opening
   feedback and rewriter are enabled in production only after the evaluation the
   spec requires exists. A feature that fails stays disabled and the result is
@@ -38,7 +41,8 @@ needs at least page-view counts.
   views. Typed text is never sent anywhere: an end-to-end test asserts no
   request carries it. A privacy note in the app says exactly what is collected.
   §3's claim becomes "nothing you type leaves your device".
-- **Rollback.** Promote the previous production deployment, then revert the PR.
+- **Rollback.** Promote the previous production deployment in Vercel, then
+  revert the PR.
 
 ## Consequences
 
