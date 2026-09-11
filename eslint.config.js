@@ -12,7 +12,7 @@ export default defineConfig(
     'coverage/',
     'out/',
     '.next/',
-    '.wrangler/',
+    '.vercel/',
     'training/',
     'playwright-report/',
     'test-results/',
