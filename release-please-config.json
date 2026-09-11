@@ -3,6 +3,7 @@
   "packages": {
     ".": {
       "release-type": "node",
+      "initial-version": "0.1.0",
       "package-name": "prose-edge",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,

@@ -32,8 +32,10 @@ pnpm check             # typecheck, lint, format check, tests with coverage
    `type(scope): lowercase subject`. It becomes the squash commit and drives
    the changelog. Scopes: `document`, `analysis`, `runtime`, `ui`, `app`,
    `training`, `eval`, `bench`, `docs`, `ci`, `deps`.
-4. Merge requires the **CI OK** and **Conventional PR title** checks. Merges
-   are squash-only.
+4. Merge only when the **CI OK** and **Conventional PR title** checks are
+   green, and only by squash. The repository is private on a free plan, so the
+   ruleset is not enforced and this is on you
+   ([ADR 0003](docs/adr/0003-private-repository.md)).
 
 Releases are automatic: release-please keeps a release PR open with the next
 version and changelog; merging it tags the release.
