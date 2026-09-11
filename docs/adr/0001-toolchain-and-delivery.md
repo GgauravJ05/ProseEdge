@@ -1,6 +1,7 @@
 # 0001 — Toolchain and delivery process
 
-- **Status:** Accepted
+- **Status:** Accepted; the _Repository_ bullet is superseded by
+  [0003](0003-private-repository.md)
 - **Date:** 2026-09-10
 
 ## Context
