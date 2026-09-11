@@ -1,13 +1,12 @@
 # Dependency install policy (supply-chain hardening, ADR 0001).
 
 # Only packages listed here may run install scripts. None currently need to:
-# lefthook, esbuild and workerd all ship their platform binary as an optional
+# lefthook and esbuild (via vercel) ship their platform binary as an optional
 # dependency, and their postinstall only re-checks it. lefthook's hooks are
 # installed by the `prepare` script.
 allowBuilds:
   esbuild: false
   lefthook: false
-  workerd: false
 
 # Refuse versions published less than a day ago. Pin an older release rather
 # than adding exclusions.
