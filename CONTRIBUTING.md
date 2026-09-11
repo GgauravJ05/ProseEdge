@@ -24,6 +24,20 @@ pnpm check             # typecheck, lint, format check, tests with coverage
 | `pnpm lint` / `pnpm format` | ESLint (zero warnings) / Prettier write |
 | `pnpm fixtures:unicode`     | Regenerate the UnicodeData excerpt      |
 
+### Training (Python)
+
+`training/` is a separate uv project. Requirements: [uv](https://docs.astral.sh/uv/)
+0.12.2 (pinned in `training/pyproject.toml`); uv installs Python 3.13 itself.
+
+```sh
+cd training
+uv sync                # creates .venv from uv.lock
+uv run ruff format --check && uv run ruff check && uv run pyright && uv run pytest
+```
+
+Like pnpm, uv refuses releases younger than a day. Hypothesis runs 200 examples
+per property; `HYPOTHESIS_PROFILE=deep uv run pytest` runs 20,000.
+
 ## Workflow
 
 1. Branch from `main`: `feat/short-name`, `fix/short-name`.
