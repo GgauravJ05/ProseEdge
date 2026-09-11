@@ -12,6 +12,11 @@ pre-commit:
     - name: lint
       glob: '*.{ts,tsx,js,mjs}'
       run: node_modules/.bin/eslint --max-warnings=0 --no-warn-ignored {staged_files}
+    - name: ruff
+      root: training/
+      glob: '*.py'
+      # No-op until `uv sync` has created training/.venv.
+      run: test ! -x .venv/bin/ruff || (.venv/bin/ruff format --check {staged_files} && .venv/bin/ruff check {staged_files})
 
 commit-msg:
   jobs:

@@ -24,6 +24,20 @@ updates:
         update-types: [minor, patch]
     open-pull-requests-limit: 10
 
+  - package-ecosystem: uv
+    directory: /training
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      python-minor-and-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+
   - package-ecosystem: github-actions
     directories:
       - /

@@ -1,0 +1,56 @@
+[project]
+name = "proseedge-training"
+version = "0.0.0"
+description = "ProseEdge data pipeline, training and export (spec §5, §6)"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.13,<3.14"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "hypothesis==6.168.0",
+  # The extra supplies Node from a locked wheel instead of downloading it at runtime.
+  "pyright[nodejs]==1.1.413",
+  "pytest==9.1.1",
+  "ruff==0.16.6",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.2,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-version = "==0.12.2"
+# Refuse releases younger than a day, as pnpm's minimumReleaseAge does (ADR 0001).
+exclude-newer = "1 day"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+# Everything on, opt out explicitly: the Python counterpart of strictTypeChecked.
+select = ["ALL"]
+ignore = [
+  "COM812", # conflicts with the formatter
+  "D",      # docstrings are asked for in review where they help, not on every symbol
+  "EM101",  # a message at the raise site reads better than a variable holding it
+  "EM102",
+  "TRY003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["INP001", "PLR2004", "S101"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest]
+minversion = "9.0"
+testpaths = ["tests"]
+strict = true
+addopts = ["-ra"]
