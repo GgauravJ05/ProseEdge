@@ -86,7 +86,8 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
-          version-file: training/pyproject.toml
+          # Resolved relative to working-directory; reads [tool.uv] required-version.
+          version-file: pyproject.toml
           working-directory: training
       - run: uv sync --locked
       - run: uv run --locked ruff format --check
