@@ -17,6 +17,7 @@ import {
   sourceText,
 } from '../document';
 import type { Document, TextRange } from '../document';
+import { coverageMarks, postStats, segments } from './checks';
 import {
   FAMILIES,
   applyEdit,
@@ -26,6 +27,7 @@ import {
   toggleEmphasis,
 } from './commands';
 import type { Emphasis, Family } from './commands';
+import { browserDrafts } from './draft';
 
 const SAMPLE = [
   'Unicode "bold" is not rich text.',
@@ -40,6 +42,9 @@ const FAMILY_LABELS: Readonly<Record<Family, string>> = {
   script: 'Script',
   monospace: 'Mono',
 };
+
+const count = (n: number, one: string, many: string): string =>
+  `${String(n)} ${n === 1 ? one : many}`;
 
 /** A selection in source-text offsets, which styling never changes. */
 interface Selection {
@@ -56,7 +61,7 @@ interface Selection {
 export function Editor() {
   const id = useId();
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const [doc, setDoc] = useState<Document>(() => fromText(SAMPLE));
+  const [doc, setDoc] = useState<Document>(() => fromText(browserDrafts.load() ?? SAMPLE));
   const result = useMemo(() => render(doc), [doc]);
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const pending = useRef<Selection | null>(null);
@@ -72,6 +77,10 @@ export function Editor() {
       outputOffsetAt(result, restore.start),
       outputOffsetAt(result, restore.end),
     );
+  }, [result]);
+
+  useEffect(() => {
+    browserDrafts.save(result.output);
   }, [result]);
 
   const readSelection = useCallback((): Selection | null => {
@@ -101,6 +110,14 @@ export function Editor() {
   );
   const state = useMemo(() => selectionState(doc, ranges), [doc, ranges]);
   const [onlyFamily] = state.families.size === 1 ? [...state.families] : [];
+
+  const stats = useMemo(() => postStats(result.output), [result]);
+  // Punctuation and emoji are never styled, which is expected; highlight only
+  // letters and digits a font could not reach, which make the post look mixed.
+  const gaps = useMemo(
+    () => coverageMarks(result).filter((mark) => mark.reason !== 'not_styleable'),
+    [result],
+  );
 
   const change = (command: (current: Document, ranges: readonly TextRange[]) => Document) => {
     const current = readSelection();
@@ -186,6 +203,16 @@ export function Editor() {
           >
             Restore accessible text
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDoc(fromText(''));
+              setStatus('Post cleared.');
+              textarea.current?.focus();
+            }}
+          >
+            Clear post
+          </button>
         </div>
       </div>
 
@@ -213,7 +240,8 @@ export function Editor() {
         }}
       />
       <p id={`${id}-hint`} className="hint">
-        Select text to style it. Ctrl or ⌘ with B or I toggles bold and italic.
+        Select text to style it. Ctrl or ⌘ with B or I toggles bold and italic. Your draft is saved
+        in this browser.
       </p>
 
       <div role="group" aria-label="Copy" className="actions">
@@ -237,6 +265,42 @@ export function Editor() {
       <p role="status" className="status">
         {status}
       </p>
+
+      <section aria-labelledby={`${id}-checks`} className="checks">
+        <h2 id={`${id}-checks`}>Checks</h2>
+        <p>
+          {count(stats.characters, 'character', 'characters')} ·{' '}
+          {count(stats.words, 'word', 'words')} · {count(stats.lines, 'line', 'lines')}
+        </p>
+        {stats.styled > 0 ? (
+          <p className="notice">
+            {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may read each
+            one as a math symbol, such as “mathematical bold capital A”, or skip it. Keep the words
+            that matter most plain.
+          </p>
+        ) : (
+          <p>No styled letters, so nothing here depends on how a screen reader handles them.</p>
+        )}
+        {gaps.length > 0 && (
+          <>
+            <p>
+              {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
+              {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
+              {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
+            </p>
+            {/* A visual aid; the sentence above already says the same thing. */}
+            <pre className="preview" aria-hidden="true">
+              {segments(result.output, gaps).map((segment, index) =>
+                segment.mark === null ? (
+                  <span key={index}>{segment.text}</span>
+                ) : (
+                  <mark key={index}>{segment.text}</mark>
+                ),
+              )}
+            </pre>
+          </>
+        )}
+      </section>
     </section>
   );
 }
