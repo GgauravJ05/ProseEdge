@@ -15,7 +15,9 @@ import json
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path, PurePosixPath
-from typing import Self, cast
+from typing import Self
+
+from proseedge_training._json import as_object, expect
 
 FORMAT = 1
 _SHA256_LENGTH = 64
@@ -64,41 +66,28 @@ class Manifest:
 
     @classmethod
     def from_json(cls, text: str) -> Self:
-        fields = _string_keys(json.loads(text), "manifest")
-        if _get(fields, "format", int) != FORMAT:
+        fields = as_object(json.loads(text), "manifest", ManifestError)
+        if expect(fields, "format", int, ManifestError) != FORMAT:
             raise ManifestError(f"unsupported manifest format: {fields.get('format')!r}")
-        filters = _string_keys(fields.get("filters"), "filters")
+        filters = as_object(fields.get("filters"), "filters", ManifestError)
         if not all(isinstance(v, str) for v in filters.values()):
             raise ManifestError("filters must map strings to strings")
         try:
-            date_from = date.fromisoformat(_get(fields, "date_from", str))
-            date_to = date.fromisoformat(_get(fields, "date_to", str))
+            date_from = date.fromisoformat(expect(fields, "date_from", str, ManifestError))
+            date_to = date.fromisoformat(expect(fields, "date_to", str, ManifestError))
         except ValueError as e:
+            if isinstance(e, ManifestError):
+                raise
             raise ManifestError(f"invalid date: {e}") from e
         return cls(
-            source=_get(fields, "source", str),
-            file=_get(fields, "file", str),
-            sha256=_get(fields, "sha256", str),
-            rows=_get(fields, "rows", int),
+            source=expect(fields, "source", str, ManifestError),
+            file=expect(fields, "file", str, ManifestError),
+            sha256=expect(fields, "sha256", str, ManifestError),
+            rows=expect(fields, "rows", int, ManifestError),
             date_from=date_from,
             date_to=date_to,
             filters={k: str(v) for k, v in filters.items()},
         )
-
-
-def _string_keys(value: object, what: str) -> dict[str, object]:
-    if not isinstance(value, dict):
-        raise ManifestError(f"{what} must be a JSON object")
-    # json.loads only ever produces string keys for objects.
-    return cast("dict[str, object]", value)
-
-
-def _get[T](fields: dict[str, object], key: str, kind: type[T]) -> T:
-    value = fields.get(key)
-    # bool is an int subclass; `"rows": true` is still a type error.
-    if not isinstance(value, kind) or (isinstance(value, bool) and kind is not bool):
-        raise ManifestError(f"{key} must be {kind.__name__}, got {value!r}")
-    return value
 
 
 def sha256_of(path: Path) -> str:
