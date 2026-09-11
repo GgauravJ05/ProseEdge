@@ -14,6 +14,12 @@ main {
   margin: 2rem auto;
 }
 
+label {
+  display: block;
+  font-weight: 600;
+  margin-block: 0.75rem 0.25rem;
+}
+
 textarea {
   box-sizing: border-box;
   width: 100%;
@@ -21,9 +27,32 @@ textarea {
   padding: 0.5rem;
 }
 
-.toolbar {
+button {
+  font: inherit;
+  padding: 0.25rem 0.75rem;
+}
+
+button[aria-pressed='true'] {
+  background: CanvasText;
+  color: Canvas;
+}
+
+.toolbar,
+.actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.5rem 1rem;
   margin-block: 0.5rem;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.hint,
+.status {
+  margin-block: 0.25rem;
+  font-size: 0.9rem;
 }
