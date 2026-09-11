@@ -1,12 +1,23 @@
 // @ts-check
 import eslint from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
 import vitest from '@vitest/eslint-plugin';
 import prettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
-  globalIgnores(['coverage/', 'out/', '.next/', '.wrangler/', 'training/', 'playwright-report/']),
+  globalIgnores([
+    'coverage/',
+    'out/',
+    '.next/',
+    '.wrangler/',
+    'training/',
+    'playwright-report/',
+    'test-results/',
+    'next-env.d.ts',
+  ]),
   eslint.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
@@ -34,6 +45,10 @@ export default defineConfig(
   {
     files: ['**/*.test.ts'],
     extends: [vitest.configs.recommended],
+  },
+  {
+    files: ['app/**/*.{ts,tsx}', 'src/ui/**/*.{ts,tsx}'],
+    extends: [reactHooks.configs.flat.recommended, nextPlugin.configs['core-web-vitals']],
   },
   prettier,
 );

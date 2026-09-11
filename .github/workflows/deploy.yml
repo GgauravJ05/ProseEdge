@@ -1,0 +1,53 @@
+name: Deploy
+
+# Static export to Cloudflare Pages (ADR 0001): a preview per pull request,
+# production on main. The job is skipped until the repository defines the
+# variables CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_PAGES_PROJECT and the secret
+# CLOUDFLARE_API_TOKEN (scope: Account > Cloudflare Pages > Edit).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    name: Cloudflare Pages
+    # Pull requests from forks receive no secrets; skip them instead of failing.
+    if: >-
+      vars.CLOUDFLARE_PAGES_PROJECT != '' &&
+      (github.event_name == 'push' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup
+      - run: pnpm build
+      - name: Deploy
+        id: deploy
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          pnpm exec wrangler pages deploy out \
+            --project-name "$PROJECT" --branch "$BRANCH" --commit-hash "$COMMIT" | tee deploy.log
+          url=$(grep -oE 'https://[^ ]+\.pages\.dev' deploy.log | tail -n 1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
