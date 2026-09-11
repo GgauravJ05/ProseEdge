@@ -56,3 +56,27 @@ button[aria-pressed='true'] {
   margin-block: 0.25rem;
   font-size: 0.9rem;
 }
+
+.checks {
+  margin-block-start: 1.5rem;
+  border-block-start: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+}
+
+.checks h2 {
+  font-size: 1.1rem;
+  margin-block: 1rem 0.5rem;
+}
+
+.notice {
+  padding: 0.5rem 0.75rem;
+  border-inline-start: 4px solid color-mix(in srgb, CanvasText 60%, transparent);
+  background: color-mix(in srgb, CanvasText 6%, transparent);
+}
+
+.preview {
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0.5rem;
+  border: 1px dashed color-mix(in srgb, CanvasText 30%, transparent);
+}
