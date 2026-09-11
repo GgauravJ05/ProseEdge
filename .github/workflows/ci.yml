@@ -68,7 +68,8 @@ jobs:
 
   dependency-review:
     name: Dependency review
-    if: github.event_name == 'pull_request'
+    # Unsupported on a private repository without Advanced Security (ADR 0003).
+    if: github.event_name == 'pull_request' && !github.event.repository.private
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
