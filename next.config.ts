@@ -14,6 +14,8 @@ const config: NextConfig = {
     NEXT_PUBLIC_DEPLOY_ENV:
       process.env.VERCEL_ENV ??
       (process.env.NODE_ENV === 'development' ? 'development' : 'production'),
+    // Vercel Web Analytics is served by Vercel itself, so it only loads on Vercel builds.
+    NEXT_PUBLIC_ON_VERCEL: process.env.VERCEL === '1' ? '1' : '',
   },
 };
 

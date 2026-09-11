@@ -26,6 +26,7 @@
     "fixtures:unicode": "bash scripts/fetch-unicode-fixture.sh"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@commitlint/cli": "21.2.2",
     "@commitlint/config-conventional": "21.2.2",
     "@eslint/js": "10.0.1",
@@ -49,6 +50,7 @@
     "vitest": "5.0.0"
   },
   "dependencies": {
+    "@vercel/analytics": "2.0.1",
     "next": "16.3.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"
