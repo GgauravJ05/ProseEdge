@@ -27,6 +27,7 @@ lookalikes.
 
 ## Documentation
 
+- [Roadmap: the formatter ships first, research features follow](docs/roadmap.md)
 - [Technical specification and research plan](docs/architecture-spec.md)
 - [Architecture decision records](docs/adr/)
 - [Contributing](CONTRIBUTING.md)
