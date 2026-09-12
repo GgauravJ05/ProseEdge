@@ -45,12 +45,14 @@ import {
   ItalicIcon,
   NumberedListIcon,
   PlainTextIcon,
+  PreviewIcon,
   ReadingIcon,
   RestoreIcon,
   StructureIcon,
   WarningIcon,
 } from './icons';
 import { toggleList } from './lists';
+import { PostPreview } from './post-preview';
 
 const SAMPLE = [
   'Unicode "bold" is not rich text.',
@@ -106,6 +108,16 @@ export function Editor() {
   const textarea = useRef<HTMLTextAreaElement>(null);
   const [doc, setDoc] = useState<Document>(() => fromText(browserDrafts.load() ?? SAMPLE));
   const [target, setTarget] = useState<PlatformId>('linkedin');
+  /*
+   * The right pane shows either the plain text or the feed preview.
+   *
+   * Plain text is the default, and deliberately so: showing the styled post
+   * beside the text a screen reader actually hears is the argument this app
+   * makes, and burying it behind a control would make that argument optional.
+   * The preview answers a different question — how the post will look — and is
+   * one click away (ADR 0009).
+   */
+  const [view, setView] = useState<'preview' | 'plain'>('plain');
   const result = useMemo(() => render(doc), [doc]);
   const plain = useMemo(() => sourceText(doc), [doc]);
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
@@ -167,7 +179,21 @@ export function Editor() {
     () => coverageMarks(result).filter((mark) => mark.reason !== 'not_styleable'),
     [result],
   );
-  // The fold rule is not measured yet, so the preview only exists behind its flag (ADR 0007).
+  /*
+   * The preview card measures text in its own font, so it needs a measurer
+   * whatever the flags say. Canvas contexts are cheap but not free, so they are
+   * kept per font rather than rebuilt on every keystroke.
+   */
+  const measurers = useRef(new Map<string, Measure>());
+  const measureFor = useCallback((font: string): Measure => {
+    const existing = measurers.current.get(font);
+    if (existing !== undefined) return existing;
+    const created = canvasMeasure(font);
+    measurers.current.set(font, created);
+    return created;
+  }, []);
+
+  // The fold rule is not measured yet, so the "…see more" cut stays behind its flag (ADR 0009).
   const measure = useMemo(() => (flags.foldPreview ? canvasMeasure(FEED_ESTIMATE.font) : null), []);
   const folded = useMemo(
     () =>
@@ -359,10 +385,43 @@ export function Editor() {
           </div>
           <div className="pane">
             <div className="pane-head">
-              <label htmlFor={`${id}-plain`}>Plain text</label>
-              <span className="pane-hint">what a screen reader hears</span>
+              {view === 'plain' ? (
+                <label htmlFor={`${id}-plain`}>
+                  Plain text <span className="pane-hint">what a screen reader hears</span>
+                </label>
+              ) : (
+                <p className="pane-title">
+                  Preview <span className="pane-hint">how the feed would lay it out</span>
+                </p>
+              )}
+              <div className="pane-views" role="group" aria-label="Right pane view">
+                <button
+                  type="button"
+                  aria-pressed={view === 'preview'}
+                  onClick={() => {
+                    setView('preview');
+                  }}
+                >
+                  <PreviewIcon />
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={view === 'plain'}
+                  onClick={() => {
+                    setView('plain');
+                  }}
+                >
+                  <PlainTextIcon />
+                  Plain text
+                </button>
+              </div>
             </div>
-            <textarea id={`${id}-plain`} rows={12} readOnly tabIndex={-1} value={plain} />
+            {view === 'plain' ? (
+              <textarea id={`${id}-plain`} rows={12} readOnly tabIndex={-1} value={plain} />
+            ) : (
+              <PostPreview text={result.output} platform={platform} measureFor={measureFor} />
+            )}
           </div>
         </div>
 

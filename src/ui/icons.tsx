@@ -171,3 +171,51 @@ export function FoldIcon() {
     </Icon>
   );
 }
+
+export function PreviewIcon() {
+  return (
+    <Icon>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+      <circle cx="8" cy="9.5" r="1.8" />
+      <path d="M12.5 8.5h5M12.5 11.5h3M6.5 14.5h11M6.5 17h7" />
+    </Icon>
+  );
+}
+
+/*
+ * The card's action row. These stand for "react", "comment", "repost" and
+ * "send" without borrowing any platform's own glyphs: they are decorative and
+ * inert, and the row is hidden from the accessibility tree by its container.
+ */
+export function HeartIcon() {
+  return (
+    <Icon>
+      <path d="M12 20s-7.3-4.4-7.3-9.3A4.2 4.2 0 0 1 12 8.2a4.2 4.2 0 0 1 7.3 2.5C19.3 15.6 12 20 12 20z" />
+    </Icon>
+  );
+}
+
+export function CommentIcon() {
+  return (
+    <Icon>
+      <path d="M20.5 12.2c0 4-3.8 7.2-8.5 7.2a9.8 9.8 0 0 1-2.6-.3L4.5 21l1.2-3.6a6.8 6.8 0 0 1-2.2-5.2C3.5 8.2 7.3 5 12 5s8.5 3.2 8.5 7.2z" />
+    </Icon>
+  );
+}
+
+export function RepostIcon() {
+  return (
+    <Icon>
+      <path d="M6 9.5V8a2.5 2.5 0 0 1 2.5-2.5H17M17 5.5l-2.5-2.5M17 5.5 14.5 8" />
+      <path d="M18 14.5V16a2.5 2.5 0 0 1-2.5 2.5H7M7 18.5 9.5 16M7 18.5 9.5 21" />
+    </Icon>
+  );
+}
+
+export function SendIcon() {
+  return (
+    <Icon>
+      <path d="M20.5 3.5 10.8 13.2M20.5 3.5l-6.2 17-3.5-7.3-7.3-3.5z" />
+    </Icon>
+  );
+}
