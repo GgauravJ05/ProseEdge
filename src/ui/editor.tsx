@@ -6,9 +6,12 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
+import { FEED_ESTIMATE, fold } from '../analysis/fold';
+import type { Measure } from '../analysis/fold';
 import { readability } from '../analysis/readability';
 import {
   clearStyles,
+  clusters,
   fromText,
   normalize,
   outputOffsetAt,
@@ -18,6 +21,7 @@ import {
   sourceText,
 } from '../document';
 import type { Document, ListMarker, TextRange } from '../document';
+import { flags } from '../flags';
 import { coverageMarks, postStats, segments, structureOf } from './checks';
 import {
   FAMILIES,
@@ -50,6 +54,14 @@ const READING_MIN_WORDS = 20;
 
 const count = (n: number, one: string, many: string): string =>
   `${String(n)} ${n === 1 ? one : many}`;
+
+/** Canvas text metrics in `font`, with a rough per-character fallback if canvas is unavailable. */
+function canvasMeasure(font: string): Measure {
+  const context = document.createElement('canvas').getContext('2d');
+  if (context === null) return (text) => clusters(text).length * 8;
+  context.font = font;
+  return (text) => context.measureText(text).width;
+}
 
 /** A selection in source-text offsets, which styling never changes. */
 interface Selection {
@@ -130,6 +142,12 @@ export function Editor() {
   const gaps = useMemo(
     () => coverageMarks(result).filter((mark) => mark.reason !== 'not_styleable'),
     [result],
+  );
+  // The fold rule is not measured yet, so the preview only exists behind its flag (ADR 0007).
+  const measure = useMemo(() => (flags.foldPreview ? canvasMeasure(FEED_ESTIMATE.font) : null), []);
+  const folded = useMemo(
+    () => (measure === null ? null : fold(result.output, FEED_ESTIMATE, measure)),
+    [measure, result],
   );
 
   const change = (command: (current: Document, ranges: readonly TextRange[]) => Document) => {
@@ -346,6 +364,19 @@ export function Editor() {
                   <mark key={index}>{segment.text}</mark>
                 ),
               )}
+            </pre>
+          </>
+        )}
+        {folded !== null && (
+          <>
+            <h3>Before “…see more”</h3>
+            <p className="hint">
+              An unmeasured estimate for a {String(FEED_ESTIMATE.lines)}-line feed preview. It only
+              appears in preview builds until the real fold rule is measured.
+            </p>
+            <pre className="preview fold">
+              {folded.visible}
+              {folded.truncated && <span className="ellipsis">{FEED_ESTIMATE.ellipsis}</span>}
             </pre>
           </>
         )}

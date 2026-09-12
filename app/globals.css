@@ -214,6 +214,16 @@ button[aria-pressed='true'] {
   margin-block: 0 0.5rem;
 }
 
+.checks h3 {
+  font-size: 1rem;
+  margin-block: 1.25rem 0.25rem;
+}
+
+.fold .ellipsis {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .notice {
   padding: 0.6rem 0.8rem;
   border-inline-start: 4px solid var(--notice-border);
