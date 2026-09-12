@@ -1,0 +1,16 @@
+{
+  "date_from": "2010-04-01",
+  "date_to": "2010-04-30",
+  "file": "hn/2010-04.jsonl",
+  "filters": {
+    "api": "https://hn.algolia.com/api/v1/search_by_date",
+    "collected_on": "2026-09-11",
+    "settle_days": "14",
+    "skipped_hits": "0",
+    "tags": "story"
+  },
+  "format": 1,
+  "rows": 10585,
+  "sha256": "c307a3ae4b63960178d36483f5c81d0f239c2fce76e25c7bee008a16489240d3",
+  "source": "hacker-news"
+}

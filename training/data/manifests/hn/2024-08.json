@@ -1,0 +1,16 @@
+{
+  "date_from": "2024-08-01",
+  "date_to": "2024-08-31",
+  "file": "hn/2024-08.jsonl",
+  "filters": {
+    "api": "https://hn.algolia.com/api/v1/search_by_date",
+    "collected_on": "2026-09-12",
+    "settle_days": "14",
+    "skipped_hits": "0",
+    "tags": "story"
+  },
+  "format": 1,
+  "rows": 24246,
+  "sha256": "6bbb1b54e5d7db74e2eae37b94a9bb5cbf20b9c5aa0fb6f4a3ff767b6e69efdc",
+  "source": "hacker-news"
+}
