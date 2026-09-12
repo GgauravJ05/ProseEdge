@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 import { MoonIcon, SunIcon } from './icons';
 import { DEFAULT_THEME, isTheme, other, saveTheme, storedTheme } from './theme';
@@ -11,36 +11,57 @@ import type { Theme } from './theme';
 
 const browserStorage = (): Storage | undefined => globalThis.localStorage;
 
+/*
+ * The applied theme lives on `<html data-theme>`, written by the inline script
+ * in the layout before the first paint. That makes the DOM the source of truth
+ * rather than React state, so it is read here as an external store: the
+ * subscribers below are notified whenever the toggle writes a new value.
+ */
+const listeners = new Set<() => void>();
+
+function subscribe(onChange: () => void): () => void {
+  listeners.add(onChange);
+  return () => {
+    listeners.delete(onChange);
+  };
+}
+
+/** What the browser is actually showing. */
+function appliedTheme(): Theme {
+  const applied = document.documentElement.dataset.theme;
+  return isTheme(applied) ? applied : storedTheme(browserStorage);
+}
+
+/*
+ * What the build-time prerender rendered. It cannot know the reader's choice,
+ * so it must report the default — and React uses this snapshot while hydrating,
+ * which is what keeps the first client render identical to the served markup.
+ */
+function prerenderedTheme(): Theme {
+  return DEFAULT_THEME;
+}
+
+function applyTheme(theme: Theme): void {
+  document.documentElement.dataset.theme = theme;
+  saveTheme(browserStorage, theme);
+  for (const onChange of listeners) onChange();
+}
+
 /**
  * Switches between light and dark and remembers the choice.
  *
- * The first render reads the attribute the inline script already set on
- * `<html>`, rather than storage, so the button's label matches what is on
- * screen without a second pass. The editor is client-only (client-editor.tsx),
- * so there is no server render to disagree with.
+ * The icon and the label both depend on the current theme, so reading the
+ * remembered choice during the first client render would disagree with the
+ * prerendered markup and fail hydration for everyone who had chosen dark.
+ * `useSyncExternalStore` exists for exactly this: it renders the server
+ * snapshot while hydrating and swaps to the live one immediately after, so
+ * the markup matches and the button still ends up correct. The page itself is
+ * already painted in the right colours by then — only this button catches up.
  */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // This component renders in the root layout, which is prerendered at build
-    // time where there is no `document`; in the browser the remembered choice
-    // is the truth, and it is what the inline script already applied.
-    if (typeof document === 'undefined') return DEFAULT_THEME;
-    const applied = document.documentElement.dataset.theme;
-    return isTheme(applied) ? applied : storedTheme(browserStorage);
-  });
-
-  /*
-   * Re-assert the theme after hydration. The inline script sets `data-theme`
-   * before paint, but the prerendered markup has no such attribute, so React
-   * removes it while reconciling — `suppressHydrationWarning` silences the
-   * warning without preventing that. Writing it here, after reconciliation,
-   * makes it stick; the script still does the pre-paint work that stops a flash.
-   */
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-
+  const theme = useSyncExternalStore(subscribe, appliedTheme, prerenderedTheme);
   const next = other(theme);
+
   return (
     <button
       type="button"
@@ -49,9 +70,7 @@ export function ThemeToggle() {
       aria-label={`Switch to ${next} theme`}
       title={`Switch to ${next} theme`}
       onClick={() => {
-        document.documentElement.dataset.theme = next;
-        saveTheme(browserStorage, next);
-        setTheme(next);
+        applyTheme(next);
       }}
     >
       {theme === 'light' ? <MoonIcon /> : <SunIcon />}

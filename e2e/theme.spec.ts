@@ -52,3 +52,30 @@ test('the theme applies before the first paint', async ({ page }) => {
   const early = await page.evaluate(() => document.documentElement.dataset.theme);
   expect(early).toBe('dark');
 });
+
+/*
+ * The toggle renders an icon and a label that depend on the current theme, so
+ * reading the remembered theme during the first client render made that render
+ * disagree with the prerendered markup: React error #418, on every reload by
+ * anyone who had chosen dark. The fix is to render the default first and adopt
+ * the real theme in an effect. Nothing else in the suite would catch it coming
+ * back, because the page looks and behaves correctly either way.
+ */
+test('reloading with a stored theme hydrates without console errors', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+
+  const problems: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') problems.push(message.text());
+  });
+  page.on('pageerror', (error) => {
+    problems.push(error.message);
+  });
+
+  await page.reload();
+  await expect(page.getByLabel('Post')).toBeVisible();
+  // The button has caught up with the remembered theme, not stuck on the default.
+  await expect(page.getByRole('button', { name: 'Switch to light theme' })).toBeVisible();
+  expect(problems).toEqual([]);
+});
