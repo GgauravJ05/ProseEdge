@@ -33,6 +33,21 @@ import {
 } from './commands';
 import type { Emphasis, Family } from './commands';
 import { browserDrafts } from './draft';
+import {
+  BoldIcon,
+  BulletListIcon,
+  CheckIcon,
+  ClearIcon,
+  CopyIcon,
+  FoldIcon,
+  ItalicIcon,
+  NumberedListIcon,
+  PlainTextIcon,
+  ReadingIcon,
+  RestoreIcon,
+  StructureIcon,
+  WarningIcon,
+} from './icons';
 import { toggleList } from './lists';
 
 const SAMPLE = [
@@ -200,160 +215,188 @@ export function Editor() {
 
   return (
     <section className="editor">
-      <div className="toolbar">
-        <div role="group" aria-label="Font" className="group">
-          {FAMILIES.map((family) => (
+      <div className="card editor-card">
+        <div className="toolbar">
+          <div role="group" aria-label="Font" className="group">
+            {FAMILIES.map((family) => (
+              <button
+                key={family}
+                type="button"
+                aria-pressed={onlyFamily === family}
+                disabled={state.families.size === 0}
+                onClick={() => {
+                  change((current, selected) => setFamily(current, selected, family));
+                }}
+              >
+                {FAMILY_LABELS[family]}
+              </button>
+            ))}
+          </div>
+          <div role="group" aria-label="Emphasis" className="group">
             <button
-              key={family}
               type="button"
-              aria-pressed={onlyFamily === family}
-              disabled={state.families.size === 0}
+              aria-pressed={state.bold === 'on'}
+              aria-keyshortcuts="Control+B Meta+B"
+              disabled={!canEmphasize(state, 'bold')}
               onClick={() => {
-                change((current, selected) => setFamily(current, selected, family));
+                emphasize('bold');
               }}
             >
-              {FAMILY_LABELS[family]}
+              <BoldIcon />
+              Bold
             </button>
-          ))}
+            <button
+              type="button"
+              aria-pressed={state.italic === 'on'}
+              aria-keyshortcuts="Control+I Meta+I"
+              disabled={!canEmphasize(state, 'italic')}
+              onClick={() => {
+                emphasize('italic');
+              }}
+            >
+              <ItalicIcon />
+              Italic
+            </button>
+          </div>
+          <div role="group" aria-label="Lists" className="group">
+            <button
+              type="button"
+              onClick={() => {
+                list('bullet');
+              }}
+            >
+              <BulletListIcon />
+              Bulleted list
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                list('numbered');
+              }}
+            >
+              <NumberedListIcon />
+              Numbered list
+            </button>
+          </div>
+          <div role="group" aria-label="Reset" className="group">
+            <button
+              type="button"
+              onClick={() => {
+                setDoc(clearStyles(doc));
+                setStatus('All styling removed.');
+              }}
+            >
+              <RestoreIcon />
+              Restore accessible text
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDoc(fromText(''));
+                setStatus('Post cleared.');
+                textarea.current?.focus();
+              }}
+            >
+              <ClearIcon />
+              Clear post
+            </button>
+          </div>
         </div>
-        <div role="group" aria-label="Emphasis" className="group">
-          <button
-            type="button"
-            aria-pressed={state.bold === 'on'}
-            aria-keyshortcuts="Control+B Meta+B"
-            disabled={!canEmphasize(state, 'bold')}
-            onClick={() => {
-              emphasize('bold');
-            }}
-          >
-            Bold
-          </button>
-          <button
-            type="button"
-            aria-pressed={state.italic === 'on'}
-            aria-keyshortcuts="Control+I Meta+I"
-            disabled={!canEmphasize(state, 'italic')}
-            onClick={() => {
-              emphasize('italic');
-            }}
-          >
-            Italic
-          </button>
-        </div>
-        <div role="group" aria-label="Lists" className="group">
+
+        <label htmlFor={`${id}-post`}>Post</label>
+        <textarea
+          id={`${id}-post`}
+          ref={textarea}
+          rows={10}
+          spellCheck
+          aria-describedby={`${id}-hint`}
+          value={result.output}
+          onKeyDown={onKeyDown}
+          onSelect={syncSelection}
+          onChange={(event) => {
+            const el = event.target;
+            edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
+          }}
+        />
+        <p id={`${id}-hint`} className="hint">
+          Select text to style it. Ctrl or ⌘ with B or I toggles bold and italic. Your draft is
+          saved in this browser.
+        </p>
+
+        <div role="group" aria-label="Copy" className="actions">
           <button
             type="button"
             onClick={() => {
-              list('bullet');
+              void copy(result.output, 'the styled post');
             }}
           >
-            Bulleted list
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              list('numbered');
-            }}
-          >
-            Numbered list
-          </button>
-        </div>
-        <div role="group" aria-label="Reset" className="group">
-          <button
-            type="button"
-            onClick={() => {
-              setDoc(clearStyles(doc));
-              setStatus('All styling removed.');
-            }}
-          >
-            Restore accessible text
+            <CopyIcon />
+            Copy styled
           </button>
           <button
             type="button"
             onClick={() => {
-              setDoc(fromText(''));
-              setStatus('Post cleared.');
-              textarea.current?.focus();
+              void copy(sourceText(doc), 'plain text');
             }}
           >
-            Clear post
+            <PlainTextIcon />
+            Copy plain text
           </button>
         </div>
+        <p role="status" className="status">
+          {status}
+        </p>
       </div>
 
-      <label htmlFor={`${id}-post`}>Post</label>
-      <textarea
-        id={`${id}-post`}
-        ref={textarea}
-        rows={10}
-        spellCheck
-        aria-describedby={`${id}-hint`}
-        value={result.output}
-        onKeyDown={onKeyDown}
-        onSelect={syncSelection}
-        onChange={(event) => {
-          const el = event.target;
-          edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
-        }}
-      />
-      <p id={`${id}-hint`} className="hint">
-        Select text to style it. Ctrl or ⌘ with B or I toggles bold and italic. Your draft is saved
-        in this browser.
-      </p>
-
-      <div role="group" aria-label="Copy" className="actions">
-        <button
-          type="button"
-          onClick={() => {
-            void copy(result.output, 'the styled post');
-          }}
-        >
-          Copy styled
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            void copy(sourceText(doc), 'plain text');
-          }}
-        >
-          Copy plain text
-        </button>
-      </div>
-      <p role="status" className="status">
-        {status}
-      </p>
-
-      <section aria-labelledby={`${id}-checks`} className="checks">
+      <section aria-labelledby={`${id}-checks`} className="card checks">
         <h2 id={`${id}-checks`}>Checks</h2>
-        <p>
-          {count(stats.characters, 'character', 'characters')} ·{' '}
-          {count(stats.words, 'word', 'words')} · {count(stats.lines, 'line', 'lines')}
+        <ul className="stats">
+          <li>{count(stats.characters, 'character', 'characters')}</li>
+          <li>{count(stats.words, 'word', 'words')}</li>
+          <li>{count(stats.lines, 'line', 'lines')}</li>
+        </ul>
+        <p className="check">
+          <StructureIcon />
+          <span>
+            Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
+            {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
+            {structure.link && ' · ends with a link'}
+          </span>
         </p>
-        <p>
-          Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
-          {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
-          {structure.link && ' · ends with a link'}
-        </p>
-        <p>
-          {reading.grade === null || reading.words < READING_MIN_WORDS
-            ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
-            : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
+        <p className="check">
+          <ReadingIcon />
+          <span>
+            {reading.grade === null || reading.words < READING_MIN_WORDS
+              ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
+              : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
+          </span>
         </p>
         {stats.styled > 0 ? (
-          <p className="notice">
-            {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may read each
-            one as a math symbol, such as “mathematical bold capital A”, or skip it. Keep the words
-            that matter most plain.
+          <p className="check notice">
+            <WarningIcon />
+            <span>
+              {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may read each
+              one as a math symbol, such as “mathematical bold capital A”, or skip it. Keep the
+              words that matter most plain.
+            </span>
           </p>
         ) : (
-          <p>No styled letters, so nothing here depends on how a screen reader handles them.</p>
+          <p className="check">
+            <CheckIcon />
+            <span>
+              No styled letters, so nothing here depends on how a screen reader handles them.
+            </span>
+          </p>
         )}
         {gaps.length > 0 && (
           <>
-            <p>
-              {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
-              {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
-              {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
+            <p className="check">
+              <WarningIcon />
+              <span>
+                {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
+                {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
+                {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
+              </span>
             </p>
             {/* A visual aid; the sentence above already says the same thing. */}
             <pre className="preview" aria-hidden="true">
@@ -369,7 +412,10 @@ export function Editor() {
         )}
         {folded !== null && (
           <>
-            <h3>Before “…see more”</h3>
+            <h3>
+              <FoldIcon />
+              Before “…see more”
+            </h3>
             <p className="hint">
               An unmeasured estimate for a {String(FEED_ESTIMATE.lines)}-line feed preview. It only
               appears in preview builds until the real fold rule is measured.

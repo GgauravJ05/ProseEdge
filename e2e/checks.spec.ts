@@ -25,7 +25,7 @@ test('counts the post and warns about styled letters', async ({ page }) => {
   const post = page.getByLabel('Post');
   const checks = page.getByRole('region', { name: 'Checks' });
   await post.fill('Hello world');
-  await expect(checks).toContainText('11 characters · 2 words · 1 line');
+  await expect(checks.getByRole('listitem')).toHaveText(['11 characters', '2 words', '1 line']);
   await expect(checks).toContainText('No styled letters');
 
   await select(post, 0, 'Hello'.length);

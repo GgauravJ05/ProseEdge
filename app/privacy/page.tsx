@@ -11,9 +11,10 @@ export const metadata: Metadata = {
 
 export default function Privacy() {
   return (
-    <main>
+    <main className="prose">
+      <p className="eyebrow">What we store and send</p>
       <h1>Privacy</h1>
-      <p>ProseEdge has no accounts and no server of its own. The short version:</p>
+      <p className="lede">ProseEdge has no accounts and no server of its own.</p>
 
       <h2>What you type never leaves your browser</h2>
       <p>

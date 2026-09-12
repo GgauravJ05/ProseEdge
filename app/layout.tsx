@@ -3,10 +3,20 @@
 
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
+import { Inter, Source_Serif_4 } from 'next/font/google';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import './globals.css';
+
+// Downloaded at build time and served from this domain: no third-party request
+// at runtime, which keeps the privacy claim on /privacy exactly true.
+const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
+const serif = Source_Serif_4({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-source-serif',
+});
 
 const title = 'ProseEdge — Unicode text formatter';
 const description =
@@ -23,8 +33,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f7f7f5' },
-    { media: '(prefers-color-scheme: dark)', color: '#15181c' },
+    { media: '(prefers-color-scheme: light)', color: '#fbf7f0' },
+    { media: '(prefers-color-scheme: dark)', color: '#14120f' },
   ],
 };
 
@@ -33,7 +43,7 @@ const onVercel = process.env.NEXT_PUBLIC_ON_VERCEL === '1';
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <body>
         <a className="skip-link" href="#content">
           Skip to content
@@ -42,7 +52,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           <Link href="/" className="brand">
             ProseEdge
           </Link>
-          <nav aria-label="Site">
+          <nav aria-label="Site" className="site-nav">
             <Link href="/privacy">Privacy</Link>
           </nav>
         </header>
