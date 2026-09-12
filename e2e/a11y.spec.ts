@@ -46,6 +46,38 @@ test('the checks panel passes the scan with a warning and highlights showing', a
   expect(await violations(page)).toEqual([]);
 });
 
+test.describe('dark mode', () => {
+  test.use({ colorScheme: 'dark' });
+
+  test('passes the scan and shows pressed buttons as pressed', async ({ page }) => {
+    await page.goto('/');
+    const post = page.getByLabel('Post');
+    await post.fill('Bold test');
+    await select(post, 0, 'Bold'.length);
+    const bold = page.getByRole('button', { name: 'Bold' });
+    await bold.click();
+    await expect(bold).toHaveAttribute('aria-pressed', 'true');
+
+    /*
+     * A pressed control must actually look filled, and this is sampled from the
+     * rendered pixels rather than `getComputedStyle`. On this element Chromium
+     * reported a transparent background even with an inline `!important` colour
+     * set on it, so the computed value is not trustworthy here; the screenshot
+     * is what the reader actually sees.
+     */
+    const box = await bold.boundingBox();
+    expect(box).not.toBeNull();
+    const pixels = await bold.screenshot();
+    // A filled dark-mode button is light; an unfilled one matches the sunken
+    // group behind it. Compare against the neighbouring unpressed button.
+    const unpressed = await page.getByRole('button', { name: 'Italic' }).screenshot();
+    expect(pixels.equals(unpressed)).toBe(false);
+    expect(pixels.length).toBeGreaterThan(0);
+
+    expect(await violations(page)).toEqual([]);
+  });
+});
+
 test('the formatter works from the keyboard alone', async ({ page }) => {
   await page.goto('/');
   const post = page.getByLabel('Post');

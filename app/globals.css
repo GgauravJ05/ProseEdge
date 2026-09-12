@@ -2,7 +2,12 @@
  * Editorial ink and amber. One accent, warm paper, a serif display face for
  * headings and a sans for everything you operate. Every colour pair here is
  * checked by the axe scans in e2e/a11y.spec.ts, which fail on WCAG AA contrast.
+ *
+ * Component styles live in panes.css. The import must stay above every rule:
+ * CSS drops an @import that follows one.
  */
+
+@import './panes.css';
 
 :root {
   color-scheme: light dark;
@@ -19,6 +24,7 @@
   --accent-ink: #ffffff;
   --accent-soft: #fceeda;
   --mark: #f6d28a;
+  --danger: #8f2c12;
   --shadow: 0 1px 2px rgb(22 19 15 / 6%), 0 8px 24px -16px rgb(22 19 15 / 25%);
 
   --radius: 0.625rem;
@@ -48,6 +54,7 @@
     --accent-ink: #211a12;
     --accent-soft: #2c2318;
     --mark: #6b4e1b;
+    --danger: #f2937a;
     --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px -16px rgb(0 0 0 / 70%);
   }
 }
@@ -267,17 +274,59 @@ button:disabled {
  * background: near-white on white, which the axe scan catches. Pressed wins
  * explicitly, hovered or not.
  */
+/*
+ * `background-color`, not the `background` shorthand: the CSS minifier
+ * collapsed the shorthand in this grouped selector into an empty
+ * `background-color`, which reset the fill to transparent and left a pressed
+ * button looking unpressed. The longhand survives minification intact.
+ */
 button[aria-pressed='true'],
 button[aria-pressed='true']:hover:not(:disabled) {
-  background: var(--ink);
+  background-color: var(--ink);
   color: var(--paper);
   border-color: var(--ink);
 }
 
-button[aria-pressed='true']:disabled {
-  background: var(--muted);
+/*
+ * Scoped copies at higher specificity. A bare `button[aria-pressed]` rule
+ * (0,1,1) ties with other single-class rules, and in the toolbar groups it was
+ * losing: the pressed Target button painted correctly while the pressed Font
+ * button stayed transparent, with text at 4.35:1 against the group's fill.
+ * Scoping to the container settles it rather than relying on source order.
+ * e2e/a11y.spec.ts asserts a pressed button is actually filled, in dark mode
+ * too, so a regression here fails the suite instead of only looking wrong.
+ */
+/*
+ * Scoped to the toolbar containers so the pressed state outranks the hover rule
+ * (0,2,1) rather than tying with it at (0,1,1) and depending on source order.
+ * e2e/a11y.spec.ts samples the rendered pixel of a pressed button in dark mode,
+ * so a regression here fails the suite instead of only looking wrong.
+ */
+.group button[aria-pressed='true'],
+.group button[aria-pressed='true']:hover:not(:disabled),
+.targets button[aria-pressed='true'],
+.targets button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: var(--ink);
   color: var(--paper);
-  border-color: var(--muted);
+  border-color: var(--ink);
+}
+
+.group button[aria-pressed='true']:disabled,
+.targets button[aria-pressed='true']:disabled {
+  background-color: var(--line-strong);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+/*
+ * Pressed but unavailable. `--muted` behind `--paper` measured 4.12:1, under
+ * the 4.5:1 the scan enforces; a line-strong fill with ink text clears it in
+ * both themes. Longhand again, so the minifier cannot empty the fill.
+ */
+button[aria-pressed='true']:disabled {
+  background-color: var(--line-strong);
+  color: var(--ink);
+  border-color: var(--line-strong);
 }
 
 .icon {
