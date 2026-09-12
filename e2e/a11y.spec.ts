@@ -47,10 +47,11 @@ test('the checks panel passes the scan with a warning and highlights showing', a
 });
 
 test.describe('dark mode', () => {
-  test.use({ colorScheme: 'dark' });
-
   test('passes the scan and shows pressed buttons as pressed', async ({ page }) => {
     await page.goto('/');
+    // The app no longer follows the operating system, so switch it deliberately.
+    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     const post = page.getByLabel('Post');
     await post.fill('Bold test');
     await select(post, 0, 'Bold'.length);

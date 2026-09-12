@@ -3,6 +3,62 @@
  * cascade order stays explicit: tokens and base first, then these components.
  */
 
+/* Theme toggle ------------------------------------------------------------ */
+
+.theme-toggle {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  padding-inline: 0.6rem;
+}
+
+/* Device compliance ------------------------------------------------------- */
+
+/*
+ * Touch targets. A mouse can hit a 38px control; a thumb needs more, so every
+ * button grows on touch devices. e2e/responsive.spec.ts fails if any visible
+ * control is under 44px there.
+ */
+@media (pointer: coarse) {
+  button {
+    min-height: 44px;
+    padding-inline: 0.85rem;
+  }
+}
+
+/* Small phones: reclaim the gutters and tighten the hero. */
+@media (max-width: 26rem) {
+  body {
+    padding-inline: 0.875rem;
+  }
+
+  .editor-card {
+    padding: 0.5rem 0.5rem 0.75rem;
+  }
+
+  .checks {
+    padding: 1rem 0.9rem 1.15rem;
+  }
+
+  .lede {
+    font-size: 1rem;
+  }
+
+  .theme-toggle-text {
+    /* The icon carries the meaning; the label would crowd the header. */
+    display: none;
+  }
+}
+
+/* Wide screens: let the two panes breathe rather than capping at reading width. */
+@media (min-width: 90rem) {
+  .editor,
+  .site-header,
+  .site-footer,
+  main {
+    max-width: 64rem;
+  }
+}
+
 /* Hero specimen strip ----------------------------------------------------- */
 
 .underline-accent {

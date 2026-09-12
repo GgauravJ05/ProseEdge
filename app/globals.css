@@ -9,8 +9,14 @@
 
 @import './panes.css';
 
-:root {
-  color-scheme: light dark;
+/*
+ * Light is the default and the app does not follow the operating system: the
+ * theme is an explicit choice, applied to <html data-theme> before first paint
+ * by the inline script in layout.tsx and remembered in this browser.
+ */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
 
   --paper: #fbf7f0;
   --surface: #ffffff;
@@ -40,23 +46,23 @@
   -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #14120f;
-    --surface: #1c1916;
-    --surface-sunken: #211d19;
-    --ink: #f4ede3;
-    --muted: #aba093;
-    --line: #332e27;
-    --line-strong: #4a423a;
-    --accent: #f0a85a;
-    --accent-hover: #f7bc7b;
-    --accent-ink: #211a12;
-    --accent-soft: #2c2318;
-    --mark: #6b4e1b;
-    --danger: #f2937a;
-    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px -16px rgb(0 0 0 / 70%);
-  }
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --paper: #14120f;
+  --surface: #1c1916;
+  --surface-sunken: #211d19;
+  --ink: #f4ede3;
+  --muted: #aba093;
+  --line: #332e27;
+  --line-strong: #4a423a;
+  --accent: #f0a85a;
+  --accent-hover: #f7bc7b;
+  --accent-ink: #211a12;
+  --accent-soft: #2c2318;
+  --mark: #6b4e1b;
+  --danger: #f2937a;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px -16px rgb(0 0 0 / 70%);
 }
 
 *,
@@ -311,11 +317,17 @@ button[aria-pressed='true']:hover:not(:disabled) {
   border-color: var(--ink);
 }
 
+/*
+ * Pressed but unavailable. No opacity: fading this pair is what measured
+ * 4.39:1, under the 4.5:1 the scan enforces. The full ink fill with paper text
+ * is ~13:1; the dashed outline carries "unavailable" instead of a faded look.
+ */
 .group button[aria-pressed='true']:disabled,
 .targets button[aria-pressed='true']:disabled {
-  background-color: var(--line-strong);
-  color: var(--ink);
-  border-color: var(--line-strong);
+  background-color: var(--ink);
+  color: var(--paper);
+  border-style: dashed;
+  border-color: var(--muted);
 }
 
 /*
