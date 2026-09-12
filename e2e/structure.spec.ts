@@ -69,3 +69,9 @@ test('reports the opening, a closing link and a reading grade', async ({ page })
   await expect(checks).toContainText('Structure: 2 opening lines · ends with a link');
   await expect(checks).toContainText(/Reading grade \d+\.\d \(Flesch–Kincaid/u);
 });
+
+test('the unmeasured fold preview stays out of production builds', async ({ page }) => {
+  // CI builds as production, where the foldPreview flag is off (src/flags.ts).
+  await expect(page.getByRole('region', { name: 'Checks' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /see more/u })).toHaveCount(0);
+});
