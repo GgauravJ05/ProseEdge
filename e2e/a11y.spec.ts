@@ -13,8 +13,28 @@ const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 /**
  * Violations as readable lines. Each one names the offending element and why it
  * failed, so a red run says what to fix rather than only which rule broke.
+ *
+ * Buttons and links animate their colours over 120ms (globals.css), so a scan
+ * that runs the instant after a click or a theme switch samples a half-blended
+ * colour — an ink that is on its way from one token to another, against a
+ * background doing the same. That reports contrast failures for colour pairs
+ * that are nowhere in the palette and do not exist once the paint settles.
+ * Waiting for animations to finish is part of taking the measurement, so it
+ * belongs here rather than in each caller.
  */
 async function violations(page: Page): Promise<string[]> {
+  await page.evaluate(async () => {
+    // Resolves when every running transition and animation has finished.
+    await Promise.all(
+      document.getAnimations().map(async (animation) => {
+        try {
+          await animation.finished;
+        } catch {
+          // A cancelled animation is finished for our purposes.
+        }
+      }),
+    );
+  });
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   return results.violations.map(
     (violation) =>
@@ -43,6 +63,30 @@ test('the checks panel passes the scan with a warning and highlights showing', a
   await select(post, 0, 'Top 3 tips'.length);
   await page.getByRole('button', { name: 'Script' }).click();
   await expect(page.locator('mark')).toHaveCount(1);
+  expect(await violations(page)).toEqual([]);
+});
+
+/*
+ * The preview card is a second rendering surface with its own colours, an
+ * empty avatar and a decorative action row, and it is not the pane's default
+ * view — so no other scan in this file reaches it. Without this, a contrast or
+ * structure regression inside the card would ship unnoticed.
+ */
+test('the post preview passes the scan, in both themes', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('Post').fill('A post worth previewing, with a second line to wrap.');
+  await page
+    .getByRole('group', { name: 'Right pane view' })
+    .getByRole('button', { name: 'Preview' })
+    .click();
+  await expect(page.locator('.preview-card')).toBeVisible();
+  expect(await violations(page)).toEqual([]);
+
+  // The card borrows the app's own tokens, so it has to hold up in dark too.
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('.preview-card')).toBeVisible();
+  // `violations` waits for the colour transition to settle before scanning.
   expect(await violations(page)).toEqual([]);
 });
 

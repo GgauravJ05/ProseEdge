@@ -182,12 +182,39 @@
   min-width: 0;
 }
 
+/*
+ * Both heads are exactly as tall as the tallest thing either can hold, which is
+ * the view switch in the right one. A `min-height` floor is not enough: on
+ * touch the switch's buttons take the global 44px minimum and the right head
+ * grows past any floor set here, so the heads are sized from the same variable
+ * and the content is centred inside it.
+ *
+ * e2e/responsive.spec.ts asserts the two panes stay level on a wide screen, so
+ * a regression here fails the suite rather than only looking slightly off.
+ */
+.panes {
+  --pane-head-height: 2.4rem;
+}
+
+@media (pointer: coarse) {
+  .panes {
+    /* The 44px touch target plus the switch's own padding. */
+    --pane-head-height: 3.25rem;
+  }
+}
+
 .pane-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  height: var(--pane-head-height);
   margin-block: 1rem 0.4rem;
+}
+
+/* The switch fills the head rather than setting its height. */
+.pane-views button {
+  min-height: 0;
 }
 
 .pane-head label,
@@ -210,4 +237,129 @@
 .pane textarea[readonly] {
   background: var(--surface-sunken);
   color: var(--muted);
+}
+
+/* Right pane view switch -------------------------------------------------- */
+
+/*
+ * Preview and plain text share the right pane. A small segmented control, not
+ * tabs: there are two views over the same post, and the pane heading already
+ * says which is showing.
+ */
+.pane-views {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.pane-views button {
+  font-size: 0.82rem;
+  padding: 0.25rem 0.55rem;
+}
+
+/* Post preview card ------------------------------------------------------- */
+
+/*
+ * A feed card drawn in this app's own palette. It borrows no logo, wordmark or
+ * brand colour (ADR 0009), which is what lets it follow the light and dark
+ * themes and stay inside the contrast budget the axe scans enforce.
+ */
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.9rem 1rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.preview-avatar {
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line-strong);
+}
+
+.preview-who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.preview-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.preview-sub {
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/*
+ * The body is laid out from lines the app measured itself, so each one is its
+ * own block and the browser is never asked to re-wrap them.
+ */
+.preview-body {
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  /* A long unbroken word must not push the card wider than the column. */
+  overflow-wrap: anywhere;
+}
+
+.preview-line {
+  display: block;
+  white-space: pre-wrap;
+}
+
+.preview-more {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 1.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.preview-caveat {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.preview-empty {
+  margin-block: 0.5rem 0;
+}
+
+/* The feed column is fixed in pixels, so let it scroll rather than overflow. */
+@media (max-width: 34rem) {
+  .preview-card {
+    padding: 0.75rem 0.8rem 0.65rem;
+  }
+
+  .preview-actions {
+    gap: 1.25rem;
+  }
 }
