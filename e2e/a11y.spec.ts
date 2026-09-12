@@ -3,19 +3,36 @@
 
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 import { select } from './helpers';
 
 // WCAG 2.2 A and AA rules. A formatter that warns about accessibility has to pass them itself.
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
+/**
+ * Violations as readable lines. Each one names the offending element and why it
+ * failed, so a red run says what to fix rather than only which rule broke.
+ */
+async function violations(page: Page): Promise<string[]> {
+  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+  return results.violations.map(
+    (violation) =>
+      `${violation.id}: ${violation.nodes
+        .map(
+          (node) =>
+            `${node.target.join(' ')} ${node.html} — ${node.failureSummary ?? violation.help}`,
+        )
+        .join(' | ')}`,
+  );
+}
+
 for (const path of ['/', '/privacy']) {
   test(`${path} has no automatically detectable accessibility violations`, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     if (path === '/') await expect(page.getByLabel('Post')).toBeVisible();
-    const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+    expect(await violations(page)).toEqual([]);
   });
 }
 
@@ -26,8 +43,7 @@ test('the checks panel passes the scan with a warning and highlights showing', a
   await select(post, 0, 'Top 3 tips'.length);
   await page.getByRole('button', { name: 'Script' }).click();
   await expect(page.locator('mark')).toHaveCount(1);
-  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
-  expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+  expect(await violations(page)).toEqual([]);
 });
 
 test('the formatter works from the keyboard alone', async ({ page }) => {

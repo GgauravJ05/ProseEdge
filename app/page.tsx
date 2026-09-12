@@ -6,10 +6,12 @@ import { ClientEditor } from '../src/ui/client-editor';
 export default function Home() {
   return (
     <main>
-      <h1>ProseEdge</h1>
+      <p className="eyebrow">Local-first · v0.1</p>
+      <h1>Style a post without losing the plain text</h1>
       <p className="lede">
-        Bold, italic and other styles for LinkedIn, X and Threads posts, made from Unicode letters.
-        What you type stays in this browser.
+        Bold, italic, script and monospace letters for LinkedIn, X and Threads, built from Unicode
+        symbols. ProseEdge keeps the plain version underneath, tells you what screen readers will
+        hear, and never sends what you type anywhere.
       </p>
       <ClientEditor />
     </main>
