@@ -8,6 +8,8 @@ import type { KeyboardEvent } from 'react';
 
 import { FEED_ESTIMATE, fold } from '../analysis/fold';
 import type { Measure } from '../analysis/fold';
+import { PLATFORM_LIST, PLATFORMS, budget } from '../analysis/platforms';
+import type { PlatformId } from '../analysis/platforms';
 import { readability } from '../analysis/readability';
 import {
   clearStyles,
@@ -70,6 +72,8 @@ const READING_MIN_WORDS = 20;
 const count = (n: number, one: string, many: string): string =>
   `${String(n)} ${n === 1 ? one : many}`;
 
+const number = (n: number): string => n.toLocaleString('en-US');
+
 /** Canvas text metrics in `font`, with a rough per-character fallback if canvas is unavailable. */
 function canvasMeasure(font: string): Measure {
   const context = document.createElement('canvas').getContext('2d');
@@ -91,16 +95,19 @@ const toSource = (value: string, start: number, end: number): Selection => ({
 });
 
 /**
- * A textarea over the rendered post. Every edit goes through `applyEdit`, so the
- * document tree stays the source of truth; selections cross between output and
- * source offsets through provenance (spec §4.1), because styled letters are
- * two UTF-16 units and plain ones are one.
+ * Two panes over one document: the styled post you copy, and the plain text a
+ * screen reader hears. Every edit goes through `applyEdit`, so the document tree
+ * stays the source of truth; selections cross between output and source offsets
+ * through provenance (spec §4.1), because styled letters are two UTF-16 units
+ * and plain ones are one.
  */
 export function Editor() {
   const id = useId();
   const textarea = useRef<HTMLTextAreaElement>(null);
   const [doc, setDoc] = useState<Document>(() => fromText(browserDrafts.load() ?? SAMPLE));
+  const [target, setTarget] = useState<PlatformId>('linkedin');
   const result = useMemo(() => render(doc), [doc]);
+  const plain = useMemo(() => sourceText(doc), [doc]);
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const pending = useRef<Selection | null>(null);
   const [status, setStatus] = useState('');
@@ -149,9 +156,11 @@ export function Editor() {
   const state = useMemo(() => selectionState(doc, ranges), [doc, ranges]);
   const [onlyFamily] = state.families.size === 1 ? [...state.families] : [];
 
+  const platform = PLATFORMS[target];
+  const length = useMemo(() => budget(result.output, plain, platform), [result, plain, platform]);
   const stats = useMemo(() => postStats(result.output), [result]);
   const structure = useMemo(() => structureOf(doc), [doc]);
-  const reading = useMemo(() => readability(sourceText(doc)), [doc]);
+  const reading = useMemo(() => readability(plain), [plain]);
   // Punctuation and emoji are never styled, which is expected; highlight only
   // letters and digits a font could not reach, which make the post look mixed.
   const gaps = useMemo(
@@ -161,8 +170,11 @@ export function Editor() {
   // The fold rule is not measured yet, so the preview only exists behind its flag (ADR 0007).
   const measure = useMemo(() => (flags.foldPreview ? canvasMeasure(FEED_ESTIMATE.font) : null), []);
   const folded = useMemo(
-    () => (measure === null ? null : fold(result.output, FEED_ESTIMATE, measure)),
-    [measure, result],
+    () =>
+      measure === null || platform.fold === null
+        ? null
+        : fold(result.output, platform.fold, measure),
+    [measure, platform, result],
   );
 
   const change = (command: (current: Document, ranges: readonly TextRange[]) => Document) => {
@@ -216,6 +228,27 @@ export function Editor() {
   return (
     <section className="editor">
       <div className="card editor-card">
+        <div className="targets" role="group" aria-label="Target">
+          <p className="targets-label">Writing for</p>
+          {PLATFORM_LIST.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={target === option.id}
+              onClick={() => {
+                setTarget(option.id);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+          <p className="target-note">
+            {platform.note}
+            {platform.confidence === 'assumed' &&
+              ' Counting behaviour here is assumed, not tested.'}
+          </p>
+        </div>
+
         <div className="toolbar">
           <div role="group" aria-label="Font" className="group">
             {FAMILIES.map((family) => (
@@ -303,21 +336,58 @@ export function Editor() {
           </div>
         </div>
 
-        <label htmlFor={`${id}-post`}>Post</label>
-        <textarea
-          id={`${id}-post`}
-          ref={textarea}
-          rows={10}
-          spellCheck
-          aria-describedby={`${id}-hint`}
-          value={result.output}
-          onKeyDown={onKeyDown}
-          onSelect={syncSelection}
-          onChange={(event) => {
-            const el = event.target;
-            edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
-          }}
-        />
+        <div className="panes">
+          <div className="pane">
+            <div className="pane-head">
+              <label htmlFor={`${id}-post`}>Post</label>
+              <span className="pane-hint">what readers see</span>
+            </div>
+            <textarea
+              id={`${id}-post`}
+              ref={textarea}
+              rows={12}
+              spellCheck
+              aria-describedby={`${id}-hint`}
+              value={result.output}
+              onKeyDown={onKeyDown}
+              onSelect={syncSelection}
+              onChange={(event) => {
+                const el = event.target;
+                edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
+              }}
+            />
+          </div>
+          <div className="pane">
+            <div className="pane-head">
+              <label htmlFor={`${id}-plain`}>Plain text</label>
+              <span className="pane-hint">what a screen reader hears</span>
+            </div>
+            <textarea id={`${id}-plain`} rows={12} readOnly tabIndex={-1} value={plain} />
+          </div>
+        </div>
+
+        {/*
+         * A group, not a live region: this count changes on every keystroke,
+         * and announcing it each time would talk over what is being typed.
+         * The copy confirmation below is the one thing worth announcing.
+         */}
+        <p className={length.over ? 'budget over' : 'budget'} role="group" aria-label="Length">
+          <span>
+            {platform.limit === null
+              ? `${number(length.used)} characters`
+              : `${number(length.used)} of ${number(platform.limit)}${length.over ? ' — over the limit' : ''}`}
+          </span>
+          {platform.limit !== null && (
+            <span className="meter" aria-hidden="true">
+              <span
+                className="meter-fill"
+                style={{ width: `${String(Math.round((length.fraction ?? 0) * 100))}%` }}
+              />
+            </span>
+          )}
+          {length.styleCost > 0 && <span>styling adds {number(length.styleCost)}</span>}
+        </p>
+
         <p id={`${id}-hint`} className="hint">
           Select text to style it. Ctrl or ⌘ with B or I toggles bold and italic. Your draft is
           saved in this browser.
@@ -336,7 +406,7 @@ export function Editor() {
           <button
             type="button"
             onClick={() => {
-              void copy(sourceText(doc), 'plain text');
+              void copy(plain, 'plain text');
             }}
           >
             <PlainTextIcon />
@@ -417,8 +487,8 @@ export function Editor() {
               Before “…see more”
             </h3>
             <p className="hint">
-              An unmeasured estimate for a {String(FEED_ESTIMATE.lines)}-line feed preview. It only
-              appears in preview builds until the real fold rule is measured.
+              An unmeasured estimate for {platform.label}. It only appears in preview builds until
+              the real fold rule is measured.
             </p>
             <pre className="preview fold">
               {folded.visible}
