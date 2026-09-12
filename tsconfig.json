@@ -37,6 +37,7 @@
     ".next/types/**/*.ts",
     "next.config.ts",
     "playwright.config.ts",
+    "vite.config.ts",
     "vitest.config.ts",
     ".next/dev/types/**/*.ts"
   ],
