@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
-  await page.goto('/');
+  await page.goto('/format');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 

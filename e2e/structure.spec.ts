@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
-  await page.goto('/');
+  await page.goto('/format');
   await expect(page.getByLabel('Post')).toBeVisible();
 });
 

@@ -3,10 +3,12 @@
  * headings and a sans for everything you operate. Every colour pair here is
  * checked by the axe scans in e2e/a11y.spec.ts, which fail on WCAG AA contrast.
  *
- * Component styles live in panes.css. The import must stay above every rule:
- * CSS drops an @import that follows one.
+ * Component styles live in landing.css (the marketing page, logo and footer)
+ * and panes.css (the editor). The imports must stay above every rule: CSS
+ * drops an @import that follows one.
  */
 
+@import './landing.css';
 @import './panes.css';
 
 /*
@@ -144,23 +146,19 @@ main {
   padding-block: 1.25rem;
 }
 
+/*
+ * The mark carries the amber accent now, so the wordmark no longer draws a bar
+ * of its own: two accents side by side read as a stray dash after the name.
+ */
 .brand {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.55rem;
   font-family: var(--font-serif);
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
-}
-
-.brand::after {
-  content: '';
-  width: 1.5rem;
-  height: 0.2rem;
-  border-radius: 1rem;
-  background: var(--accent);
 }
 
 .site-nav {

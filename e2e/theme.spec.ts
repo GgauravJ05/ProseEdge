@@ -12,7 +12,7 @@ test.describe('light by default', () => {
   test.use({ colorScheme: 'dark' });
 
   test('opens in the light theme regardless of the system setting', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/format');
     await expect(page.getByLabel('Post')).toBeVisible();
     expect(await theme(page)).toBe('light');
     // The paper colour is painted on :root, not on body.
@@ -26,7 +26,7 @@ test.describe('light by default', () => {
 });
 
 test('the toggle switches the theme and remembers it', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/format');
   await expect(page.getByLabel('Post')).toBeVisible();
   expect(await theme(page)).toBe('light');
 
@@ -45,7 +45,7 @@ test('the toggle switches the theme and remembers it', async ({ page }) => {
 });
 
 test('the theme applies before the first paint', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/format');
   await page.getByRole('button', { name: 'Switch to dark theme' }).click();
   await page.reload({ waitUntil: 'commit' });
   // Read as early as the document exists: the inline script has already run.
@@ -62,7 +62,7 @@ test('the theme applies before the first paint', async ({ page }) => {
  * back, because the page looks and behaves correctly either way.
  */
 test('reloading with a stored theme hydrates without console errors', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/format');
   await page.getByRole('button', { name: 'Switch to dark theme' }).click();
 
   const problems: string[] = [];

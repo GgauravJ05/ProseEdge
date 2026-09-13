@@ -47,17 +47,28 @@ async function violations(page: Page): Promise<string[]> {
   );
 }
 
-for (const path of ['/', '/privacy']) {
+// Every page the site serves, the landing page included: it carries the most
+// colour of anything here (hero, cards, grids, footer) and none of it was
+// covered before the formatter moved to its own route.
+for (const path of ['/', '/format', '/privacy']) {
   test(`${path} has no automatically detectable accessibility violations`, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    if (path === '/') await expect(page.getByLabel('Post')).toBeVisible();
+    if (path === '/format') await expect(page.getByLabel('Post')).toBeVisible();
     expect(await violations(page)).toEqual([]);
   });
 }
 
-test('the checks panel passes the scan with a warning and highlights showing', async ({ page }) => {
+test('the landing page leads to the formatter', async ({ page }) => {
   await page.goto('/');
+  // Two routes in: the header and the hero. Both must actually arrive.
+  await page.getByRole('main').getByRole('link', { name: 'Format now' }).first().click();
+  await expect(page).toHaveURL(/\/format\/?$/u);
+  await expect(page.getByLabel('Post')).toBeVisible();
+});
+
+test('the checks panel passes the scan with a warning and highlights showing', async ({ page }) => {
+  await page.goto('/format');
   const post = page.getByLabel('Post');
   await post.fill('Top 3 tips');
   await select(post, 0, 'Top 3 tips'.length);
@@ -73,7 +84,7 @@ test('the checks panel passes the scan with a warning and highlights showing', a
  * structure regression inside the card would ship unnoticed.
  */
 test('the post preview passes the scan, in both themes', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/format');
   await page.getByLabel('Post').fill('A post worth previewing, with a second line to wrap.');
   await page
     .getByRole('group', { name: 'Right pane view' })
@@ -92,7 +103,7 @@ test('the post preview passes the scan, in both themes', async ({ page }) => {
 
 test.describe('dark mode', () => {
   test('passes the scan and shows pressed buttons as pressed', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/format');
     // The app no longer follows the operating system, so switch it deliberately.
     await page.getByRole('button', { name: 'Switch to dark theme' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -124,7 +135,7 @@ test.describe('dark mode', () => {
 });
 
 test('the formatter works from the keyboard alone', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/format');
   const post = page.getByLabel('Post');
   await post.fill('Hello world');
   // Put the caret at the start (Home differs between macOS and Linux), then select with the keyboard.
