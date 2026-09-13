@@ -38,6 +38,15 @@ uv run ruff format --check && uv run ruff check && uv run pyright && uv run pyte
 Like pnpm, uv refuses releases younger than a day. Hypothesis runs 200 examples
 per property; `HYPOTHESIS_PROFILE=deep uv run pytest` runs 20,000.
 
+Collect Hacker News stories month by month ([ADR 0005](docs/adr/0005-hacker-news-collection-and-author-strata.md)).
+Snapshots go to `training/data/raw/`, which is ignored; commit the manifests
+written to `training/data/manifests/`. Months already collected and intact are
+skipped, so an interrupted run can simply be repeated.
+
+```sh
+uv run proseedge-data hn 2024-01 2024-12
+```
+
 ## Workflow
 
 1. Branch from `main`: `feat/short-name`, `fix/short-name`.
