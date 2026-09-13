@@ -1,0 +1,487 @@
+/*
+ * The landing page, the logo and the footer.
+ *
+ * Imported by globals.css after the tokens and before panes.css. Every colour
+ * here is a token, so the page follows the light and dark themes and stays
+ * inside the contrast budget the axe scans enforce.
+ *
+ * The landing breaks out of the 48rem reading column that `main` uses
+ * elsewhere: a marketing page wants room for a grid, an editor wants a measure.
+ */
+
+/* Logo and wordmark ------------------------------------------------------- */
+
+.logo {
+  flex: none;
+  display: block;
+  /* The tile is drawn in currentColor, so it inherits the brand's ink. */
+  color: var(--ink);
+}
+
+.brand-name {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Header call to action --------------------------------------------------- */
+
+.site-nav {
+  align-items: center;
+}
+
+.nav-cta,
+.cta-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.nav-cta {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.92rem;
+}
+
+.nav-cta:hover,
+.cta-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-ink);
+}
+
+/* Landing layout ---------------------------------------------------------- */
+
+.landing {
+  max-width: 66rem;
+  padding-block: 1.5rem 4rem;
+}
+
+.landing h2 {
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  margin-block: 0 0.75rem;
+}
+
+.landing h3 {
+  font-size: 1.05rem;
+  margin-block: 0 0.4rem;
+}
+
+/* Hero -------------------------------------------------------------------- */
+
+/*
+ * Two columns from the point there is room for them. A single narrow column of
+ * text left the right half of a desktop screen empty, so the page opened on its
+ * emptiest moment; the specimen beside it fills that space with the argument
+ * the page is making rather than with decoration.
+ */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: center;
+  padding-block: 2.25rem 3rem;
+}
+
+@media (min-width: 62rem) {
+  .hero {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 3.5rem;
+  }
+}
+
+.hero-copy {
+  max-width: 34rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  margin-block: 0.85rem 0.75rem;
+  /* Stops the last word being orphaned on a line of its own. */
+  text-wrap: balance;
+}
+
+.hero-lede {
+  font-size: 1.12rem;
+  margin-bottom: 1.75rem;
+}
+
+/* Hero specimen ----------------------------------------------------------- */
+
+.hero-specimen {
+  margin: 0;
+  padding: 0.9rem 1.35rem 1.1rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.hero-specimen li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.62rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.hero-specimen li:last-child {
+  border-bottom: none;
+}
+
+.hero-sample {
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+.hero-tag {
+  flex: none;
+  font-size: 0.7rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/*
+ * The plain row is the point of the card: everything above it is the same
+ * sentence wearing a different alphabet, and this is what survives.
+ */
+.hero-specimen .hero-plain {
+  margin-top: 0.35rem;
+  padding-top: 0.85rem;
+  border-top: 2px solid var(--line-strong);
+  border-bottom: none;
+}
+
+.hero-plain .hero-sample {
+  font-weight: 600;
+}
+
+.hero-plain .hero-tag {
+  color: var(--accent);
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.cta-primary {
+  padding: 0.7rem 1.4rem;
+  font-size: 1.02rem;
+}
+
+.cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.cta-secondary:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.cta-note {
+  margin-block: 0.85rem 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* Bands ------------------------------------------------------------------- */
+
+.band {
+  padding-block: 2.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.band-lede {
+  color: var(--muted);
+  max-width: 44rem;
+  margin-block: 0 1.5rem;
+}
+
+.band-footnote {
+  margin-block: 1.25rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 44rem;
+}
+
+/* The comparison ---------------------------------------------------------- */
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 48rem) {
+  .compare {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.compare-card {
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.compare-sample {
+  font-size: 1.3rem;
+  margin-block: 0.5rem 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.compare-plain {
+  font-size: 0.98rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.compare-note {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.band-close {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-block: 1.5rem 0;
+  padding: 1rem 1.15rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  max-width: 48rem;
+}
+
+.band-close svg {
+  flex: none;
+  margin-top: 0.15rem;
+  color: var(--accent);
+}
+
+/* Features ---------------------------------------------------------------- */
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 40rem) {
+  .feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 62rem) {
+  .feature-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.feature {
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.feature p {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--muted);
+}
+
+/* Platforms --------------------------------------------------------------- */
+
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.platform-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.platform-name {
+  font-weight: 600;
+}
+
+.platform-limit {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.platform-note {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+/* Closing ----------------------------------------------------------------- */
+
+.closing {
+  padding-block: 3rem 1rem;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.closing .lede {
+  margin-inline: auto;
+  margin-bottom: 1.5rem;
+}
+
+/* Footer ------------------------------------------------------------------ */
+
+.site-footer {
+  max-width: 66rem;
+}
+
+.footer-top {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+  padding-bottom: 1.5rem;
+}
+
+@media (min-width: 44rem) {
+  .footer-top {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 2.5rem;
+  }
+}
+
+.footer-brand .brand {
+  display: inline-flex;
+  color: var(--ink);
+}
+
+.footer-brand p {
+  margin-block: 0.65rem 0;
+  max-width: 26rem;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: flex-start;
+}
+
+.footer-links h2 {
+  margin: 0 0 0.2rem;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.footer-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+}
+
+.footer-bottom p {
+  margin: 0;
+  max-width: 52rem;
+}
+
+/* Small screens ----------------------------------------------------------- */
+
+@media (max-width: 30rem) {
+  .nav-cta {
+    padding-inline: 0.65rem;
+  }
+
+  .site-nav {
+    gap: 0.6rem;
+  }
+
+  /*
+   * Brand, Privacy, the theme toggle and a call to action do not fit a small
+   * phone: the row measured 197px wide inside a 320px viewport, pushing the
+   * whole page sideways. The CTA is the one to drop — on the landing page the
+   * hero repeats it immediately below, and on /format the reader is already
+   * in the formatter. e2e/responsive.spec.ts sweeps both routes for overflow,
+   * so a regression here fails rather than only looking broken on a phone.
+   */
+  .nav-cta {
+    display: none;
+  }
+
+  .hero {
+    padding-block: 1.25rem 2rem;
+  }
+
+  .cta-primary,
+  .cta-secondary {
+    flex: 1 1 100%;
+  }
+}

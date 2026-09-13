@@ -7,6 +7,7 @@ import { Inter, Source_Serif_4 } from 'next/font/google';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { Logo, Wordmark } from '../src/ui/logo';
 import { ThemeToggle } from '../src/ui/theme-toggle';
 import { THEME_SCRIPT } from '../src/ui/theme';
 
@@ -21,9 +22,9 @@ const serif = Source_Serif_4({
   variable: '--font-source-serif',
 });
 
-const title = 'ProseEdge — Unicode text formatter';
+const title = 'ProseEdge — Unicode text formatter for social posts';
 const description =
-  'Bold, italic, script and monospace text for LinkedIn, X, Instagram and Threads posts, with checks for what screen readers will hear. What you type never leaves your browser.';
+  'Bold, italic, script, fraktur, double-struck, monospace, underline and strikethrough for LinkedIn, X, Instagram and Threads — with the plain text a screen reader hears shown beside it. Nothing you type leaves your browser.';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://proseedge.vercel.app'),
@@ -65,20 +66,56 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           Skip to content
         </a>
         <header className="site-header">
-          <Link href="/" className="brand">
-            ProseEdge
+          <Link href="/" className="brand" aria-label="ProseEdge home">
+            <Wordmark />
           </Link>
           <nav aria-label="Site" className="site-nav">
             <Link href="/privacy">Privacy</Link>
             <ThemeToggle />
+            <Link href="/format" className="nav-cta">
+              Format now
+            </Link>
           </nav>
         </header>
         <div id="content">{children}</div>
         <footer className="site-footer">
-          <p>
-            Styled letters are Unicode symbols, not rich text. The plain version is always one click
-            away.
-          </p>
+          <div className="footer-top">
+            <div className="footer-brand">
+              <span className="brand">
+                <Logo size={24} />
+                <span className="brand-name">ProseEdge</span>
+              </span>
+              <p>
+                Styled letters are Unicode symbols, not rich text. The plain version is always one
+                click away.
+              </p>
+            </div>
+            <nav className="footer-links" aria-label="Product">
+              <h2>Product</h2>
+              <Link href="/format">Formatter</Link>
+              <Link href="/#how">How it works</Link>
+              <Link href="/#features-title">Features</Link>
+            </nav>
+            <nav className="footer-links" aria-label="About">
+              <h2>About</h2>
+              <Link href="/privacy">Privacy</Link>
+              <a href="https://www.gnu.org/licenses/agpl-3.0.html" rel="license noreferrer">
+                AGPL-3.0
+              </a>
+            </nav>
+          </div>
+          <div className="footer-bottom">
+            <p>© 2026 Gaurav Jadhav · Free software under the AGPL-3.0-or-later.</p>
+            {/*
+             * We render an approximation of each feed's layout and borrow no
+             * logo or brand colour (ADR 0009); saying so plainly is part of
+             * keeping that line clear.
+             */}
+            <p>
+              Not affiliated with, endorsed by, or connected to LinkedIn, X, Instagram or Threads.
+              Platform names are the trademarks of their respective owners.
+            </p>
+          </div>
         </footer>
         {onVercel && <Analytics />}
       </body>
