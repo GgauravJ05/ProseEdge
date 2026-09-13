@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ProseEdge — the document model</title>
+    <!--
+      Self-contained: inline SVG and CSS, no build step, no script, no external
+      font or image. Open it directly in a browser. Colours are ProseEdge's own
+      tokens (app/globals.css) and follow the reader's light or dark setting.
+
+      The accent is editorial, not a flag: it marks the two things worth looking
+      at first — the plain text, and the normalize path that guarantees it.
+    -->
+    <style>
+      :root {
+        --paper: #fbf7f0;
+        --surface: #ffffff;
+        --surface-sunken: #f4eee4;
+        --ink: #16130f;
+        --muted: #5a5249;
+        --line: #e6dccc;
+        --line-strong: #cdbfa9;
+        --accent: #a14b08;
+        --accent-soft: #fceeda;
+        --serif: Georgia, 'Times New Roman', serif;
+        --sans: -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #14120f;
+          --surface: #1c1916;
+          --surface-sunken: #211d19;
+          --ink: #f4ede3;
+          --muted: #aba093;
+          --line: #332e27;
+          --line-strong: #4a423a;
+          --accent: #f0a85a;
+          --accent-soft: #2c2318;
+        }
+      }
+
+      html,
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 3rem;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .t-title {
+        font-family: var(--serif);
+        font-size: 31px;
+        font-weight: 600;
+        fill: var(--ink);
+      }
+      .t-sub {
+        font-size: 15px;
+        fill: var(--muted);
+      }
+      .t-eyebrow {
+        font-size: 10.5px;
+        letter-spacing: 0.09em;
+        fill: var(--muted);
+        text-transform: uppercase;
+      }
+      .t-node {
+        font-size: 16.5px;
+        font-weight: 600;
+        fill: var(--ink);
+      }
+      .t-note {
+        font-size: 12.5px;
+        fill: var(--muted);
+      }
+      .t-edge {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        fill: var(--muted);
+      }
+      .t-sample {
+        font-size: 25px;
+        fill: var(--ink);
+      }
+      .t-code {
+        font-family: var(--mono);
+        font-size: 13px;
+        fill: var(--muted);
+      }
+      .t-claim {
+        font-family: var(--mono);
+        font-size: 15px;
+        fill: var(--ink);
+      }
+      .t-tree {
+        font-family: var(--serif);
+        font-size: 20px;
+        fill: var(--ink);
+      }
+
+      .box {
+        fill: var(--surface);
+        stroke: var(--line-strong);
+        stroke-width: 1.25;
+      }
+      .box-quiet {
+        fill: var(--surface);
+        stroke: var(--line);
+        stroke-width: 1.25;
+      }
+      .box-sunken {
+        fill: var(--surface-sunken);
+        stroke: var(--line);
+        stroke-width: 1.25;
+      }
+      .box-focal {
+        fill: var(--accent-soft);
+        stroke: var(--accent);
+        stroke-width: 2;
+      }
+      .edge {
+        stroke: var(--line-strong);
+        stroke-width: 1.5;
+        fill: none;
+      }
+      .edge-focal {
+        stroke: var(--accent);
+        stroke-width: 2;
+        fill: none;
+      }
+      .t-accent {
+        fill: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <svg viewBox="0 0 1160 898" role="img" aria-labelledby="dgTitle dgDesc">
+        <title id="dgTitle">ProseEdge — the document model</title>
+        <desc id="dgDesc">
+          Typing and pasting both build one document tree whose spans hold canonical ASCII text with
+          styling as metadata. Rendering that tree produces the styled post; taking its source text
+          produces the plain text. Normalizing the styled output returns exactly the plain text,
+          which is transform invariant 1. The analysis layer reads the rendered output to count
+          against a platform limit, mark characters a style could not reach, estimate readability
+          and lay out a feed preview.
+        </desc>
+
+        <defs>
+          <marker
+            id="arrow"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="7"
+            markerHeight="7"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--line-strong)" />
+          </marker>
+          <marker
+            id="arrowAccent"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="7"
+            markerHeight="7"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--accent)" />
+          </marker>
+        </defs>
+
+        <!-- Heading -->
+        <text class="t-title" x="60" y="52">ProseEdge — the document model</text>
+        <text class="t-sub" x="60" y="80">
+          Source text is canonical ASCII. Styling is metadata applied at render, so no transform can
+          lose the words.
+        </text>
+
+        <!-- Inputs -->
+        <rect class="box-quiet" x="250" y="132" width="260" height="66" rx="10" />
+        <text class="t-node" x="272" y="160">You type</text>
+        <text class="t-note" x="272" y="181">a keystroke inherits the style beside it</text>
+
+        <rect class="box-quiet" x="650" y="132" width="260" height="66" rx="10" />
+        <text class="t-node" x="672" y="160">You paste styled text</text>
+        <text class="t-note" x="672" y="181">its styles are recovered, not discarded</text>
+
+        <path class="edge" d="M 380 198 L 380 246" marker-end="url(#arrow)" />
+        <text class="t-edge" x="392" y="228">applyEdit</text>
+
+        <path class="edge" d="M 780 198 L 780 246" marker-end="url(#arrow)" />
+        <text class="t-edge" x="792" y="228">fromText · parseStyled</text>
+
+        <!-- Document tree -->
+        <rect class="box" x="180" y="248" width="800" height="134" rx="12" />
+        <text class="t-eyebrow" x="210" y="280">Document tree · one source of truth</text>
+        <text class="t-tree" x="210" y="312">Hook · Body · Call to action</text>
+        <text class="t-code" x="210" y="342">
+          Span { text: "Hiring two", style: Set["sans", "bold"] }
+        </text>
+        <text class="t-note" x="210" y="366">
+          Span text never changes when a style is applied. A styled codepoint in it is rejected.
+        </text>
+
+        <!-- Render / sourceText -->
+        <path class="edge" d="M 380 382 L 380 436" marker-end="url(#arrow)" />
+        <text class="t-edge" x="392" y="412">render()</text>
+
+        <path class="edge" d="M 780 382 L 780 436" marker-end="url(#arrow)" />
+        <text class="t-edge" x="792" y="412">sourceText()</text>
+
+        <!--
+          The two outputs carry the same word. Printing the codepoints under
+          each is what makes the difference visible: the diagram shows the claim
+          rather than asserting it.
+        -->
+        <rect class="box-quiet" x="210" y="438" width="340" height="158" rx="10" />
+        <text class="t-eyebrow" x="234" y="468">What you paste into the feed</text>
+        <text class="t-sample" x="234" y="508">𝗛𝗶𝗿𝗶𝗻𝗴 𝘁𝘄𝗼</text>
+        <text class="t-code" x="234" y="536">U+1D5DB U+1D5F6 U+1D5FF …</text>
+        <text class="t-note" x="234" y="562">Mathematical symbols, not letters.</text>
+        <text class="t-note" x="234" y="581">Unsearchable, and two code units each.</text>
+
+        <rect class="box-focal" x="610" y="438" width="340" height="158" rx="10" />
+        <text class="t-eyebrow t-accent" x="634" y="468">What a screen reader hears</text>
+        <text class="t-sample" x="634" y="508">Hiring two</text>
+        <text class="t-code" x="634" y="536">U+0048 U+0069 U+0072 …</text>
+        <text class="t-note" x="634" y="562">The words themselves, still searchable.</text>
+        <text class="t-note" x="634" y="581">Copyable on its own, always one click away.</text>
+
+        <!-- normalize: the return path -->
+        <path
+          class="edge-focal"
+          d="M 380 596 C 380 662, 780 662, 780 600"
+          marker-end="url(#arrowAccent)"
+        />
+        <text class="t-edge t-accent" x="580" y="680" text-anchor="middle">normalize()</text>
+
+        <text class="t-claim" x="580" y="716" text-anchor="middle">
+          normalize(render(doc)) === sourceText(doc)
+        </text>
+        <text class="t-note" x="580" y="738" text-anchor="middle">
+          Transform invariant 1, property-tested over generated documents
+        </text>
+
+        <!--
+          Routed down the outside so it does not cross the normalize arc, which
+          starts at x=380.
+        -->
+        <rect class="box-sunken" x="180" y="770" width="800" height="76" rx="10" />
+        <path class="edge" d="M 270 596 L 270 768" marker-end="url(#arrow)" opacity="0.5" />
+        <text class="t-eyebrow" x="210" y="800">Analysis · reads the rendered output</text>
+        <text class="t-note" x="210" y="824">
+          Platform budget · coverage marks · readability on the plain source · feed preview
+        </text>
+      </svg>
+    </div>
+  </body>
+</html>
