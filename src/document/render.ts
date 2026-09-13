@@ -80,7 +80,16 @@ export interface RenderResult {
 export const SEPARATOR = '\n';
 
 export function listMarker(marker: ListMarker, index: number): string {
-  return marker === 'bullet' ? '• ' : `${String(index + 1)}. `;
+  // A switch, not a ternary: with three markers a fall-through default would
+  // quietly render anything unrecognised as a numbered item.
+  switch (marker) {
+    case 'bullet':
+      return '• ';
+    case 'checklist':
+      return '☐ ';
+    case 'numbered':
+      return `${String(index + 1)}. `;
+  }
 }
 
 const WHITESPACE = /^\s+$/u;

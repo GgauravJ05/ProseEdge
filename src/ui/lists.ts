@@ -19,15 +19,18 @@ export interface TextEdit {
 }
 
 const BULLET = listMarker('bullet', 0);
+const CHECKLIST = listMarker('checklist', 0);
 const NUMBERED = /^\d+\. /u;
 
 export function markerOf(line: string): ListMarker | null {
   if (line.startsWith(BULLET)) return 'bullet';
+  if (line.startsWith(CHECKLIST)) return 'checklist';
   return NUMBERED.test(line) ? 'numbered' : null;
 }
 
 function withoutMarker(line: string): string {
   if (line.startsWith(BULLET)) return line.slice(BULLET.length);
+  if (line.startsWith(CHECKLIST)) return line.slice(CHECKLIST.length);
   const match = NUMBERED.exec(line);
   return match === null ? line : line.slice(match[0].length);
 }
