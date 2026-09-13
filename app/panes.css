@@ -239,6 +239,88 @@
   color: var(--muted);
 }
 
+/* Every style, one click each -------------------------------------------- */
+
+.style-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * `min-width: 0` is what makes the row obey its grid track. Without it a flex
+ * item sizes to its content, so an unbroken 90-character word in the sample
+ * made the row 649px wide inside a 390px viewport and pushed the whole page
+ * sideways — the ellipsis never engaged because nothing was constraining it.
+ */
+.style-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.style-row:hover {
+  background: var(--surface-sunken);
+}
+
+/*
+ * The sample takes the space and truncates; the label and the button keep
+ * their size, so the buttons stay in one column however long the post is.
+ */
+.style-sample {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.02rem;
+}
+
+.style-label {
+  flex: none;
+  width: 7.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.style-row button {
+  flex: none;
+}
+
+/* Narrow screens: the label moves under the sample rather than squeezing it. */
+@media (max-width: 40rem) {
+  .style-row {
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+  }
+
+  .style-sample {
+    /* Not `100%`: a percentage basis plus a long word grows the row again. */
+    flex: 1 1 0;
+    min-width: 0;
+    order: -1;
+  }
+
+  /*
+   * `flex: 1 1 auto` sized this to its content, which on a narrow screen made
+   * the label itself 581px wide. It keeps its intrinsic width and lets the
+   * sample take what is left.
+   */
+  .style-label {
+    width: auto;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+}
+
 /* Right pane view switch -------------------------------------------------- */
 
 /*
