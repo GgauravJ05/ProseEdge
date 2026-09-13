@@ -8,6 +8,8 @@ const SPECIMENS = [
   { label: 'Bold', sample: '𝗕𝗼𝗹𝗱' },
   { label: 'Italic', sample: '𝘐𝘵𝘢𝘭𝘪𝘤' },
   { label: 'Script', sample: '𝒮𝒸𝓇𝒾𝓅𝓉' },
+  { label: 'Fraktur', sample: '𝔉𝔯𝔞𝔨𝔱𝔲𝔯' },
+  { label: 'Double', sample: '𝔻𝕠𝕦𝕓𝕝𝕖' },
   { label: 'Mono', sample: '𝙼𝚘𝚗𝚘' },
 ];
 
@@ -19,9 +21,10 @@ export default function Home() {
         Style a post <span className="underline-accent">without losing</span> the plain text
       </h1>
       <p className="lede">
-        Bold, italic, script and monospace letters for LinkedIn, X, Instagram and Threads, built
-        from Unicode symbols. ProseEdge shows the plain version beside the styled one, counts both
-        against the limit you are writing for, and never sends what you type anywhere.
+        Bold, italic, script, fraktur, double-struck and monospace letters for LinkedIn, X,
+        Instagram and Threads, built from Unicode symbols. ProseEdge shows the plain version beside
+        the styled one, counts both against the limit you are writing for, and never sends what you
+        type anywhere.
       </p>
       <ul className="specimens" aria-label="The alphabets this formatter writes">
         {SPECIMENS.map(({ label, sample }) => (

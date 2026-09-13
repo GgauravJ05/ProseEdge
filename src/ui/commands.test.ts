@@ -44,11 +44,19 @@ describe('familyOf and supports', () => {
     expect(familyOf(new Set(['sans', 'bold']))).toBe('sans');
     expect(familyOf(new Set(['sans', 'script']))).toBe('script');
     expect(familyOf(new Set(['script', 'monospace']))).toBe('monospace');
+    // Precedence, highest first: monospace, doublestruck, fraktur, script, sans.
+    expect(familyOf(new Set(['script', 'fraktur']))).toBe('fraktur');
+    expect(familyOf(new Set(['fraktur', 'doublestruck']))).toBe('doublestruck');
+    expect(familyOf(new Set(['doublestruck', 'monospace']))).toBe('monospace');
+    // In FAMILIES order. Unicode has a bold script and a bold fraktur, but no
+    // italic form of either, and neither emphasis for double-struck or monospace.
     expect(FAMILIES.map((f) => [supports(f, 'bold'), supports(f, 'italic')])).toEqual([
-      [true, true],
-      [true, true],
-      [true, false],
-      [false, false],
+      [true, true], // serif
+      [true, true], // sans
+      [true, false], // script
+      [true, false], // fraktur
+      [false, false], // doublestruck
+      [false, false], // monospace
     ]);
   });
 });

@@ -10,7 +10,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
 import * as arb from './__fixtures__/arbitraries';
-import { glyph, isAsciiAlnum } from './alphabets';
+import { glyph, isAsciiAlnum, isStyledCodepoint } from './alphabets';
 import { paragraphsOf, sequentialIds, validate } from './grammar';
 import { clusters } from './graphemes';
 import { normalize } from './normalize';
@@ -28,6 +28,21 @@ function emitted(result: RenderResult, from: number, to: number): string {
 }
 
 describe('document invariants (spec §4.2)', () => {
+  /*
+   * The generator's clusters stand in for text a person could type or paste,
+   * and span text is the canonical unstyled source — so a cluster the formatter
+   * can emit is not valid source, and `validate` rejects any document holding
+   * one. Adding an alphabet turns codepoints that were inert into output, which
+   * silently falsifies this. Checking it here names the offending character
+   * instead of leaving it to surface as unrelated property failures elsewhere.
+   */
+  it('every generated cluster is legitimate source, never something we emit', () => {
+    const styled = arb.CLUSTERS.filter((cluster) =>
+      [...cluster].some((ch) => isStyledCodepoint(ch.codePointAt(0) ?? -1)),
+    );
+    expect(styled).toEqual([]);
+  });
+
   it('generated documents satisfy the grammar', () => {
     fc.assert(
       fc.property(arb.document, (doc) => {

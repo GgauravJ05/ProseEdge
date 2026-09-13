@@ -11,9 +11,24 @@ describe('normalize', () => {
   });
 
   it('is narrower than NFKC: ligatures, fullwidth and superscripts survive', () => {
-    const text = 'ﬁ Ａ ² \u{1D538}';
+    const text = 'ﬁ Ａ ²';
     expect(text.normalize('NFKC')).not.toBe(text);
     expect(normalize(text)).toBe(text);
+  });
+
+  it('folds the alphabets it emits, and only those', () => {
+    /*
+     * Double-struck A survived normalize until ProseEdge could emit it; now it
+     * is output rather than source, so folding it is what keeps the round-trip
+     * invariant true. Bold capital alpha is Greek, which no alphabet here
+     * covers, so it still passes through.
+     */
+    expect(normalize('\u{1D538}\u{1D552}')).toBe('Aa');
+    expect(normalize('\u{1D504}\u{1D51E}')).toBe('Aa');
+    expect(normalize('\u{1D56C}\u{1D586}')).toBe('Aa');
+    // The Letterlike exceptions fold too: ℂ, ℌ, ℑ.
+    expect(normalize('ℂℌℑ')).toBe('CHI');
+    expect(normalize('\u{1D6A8}')).toBe('\u{1D6A8}');
   });
 });
 

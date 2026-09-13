@@ -20,6 +20,9 @@ export type AlphabetId =
   | 'bold_italic'
   | 'script'
   | 'bold_script'
+  | 'fraktur'
+  | 'bold_fraktur'
+  | 'doublestruck'
   | 'sans'
   | 'sans_bold'
   | 'sans_italic'
@@ -90,6 +93,49 @@ export const ALPHABETS: Readonly<Record<AlphabetId, Alphabet>> = {
     smallA: 0x1d4ea,
     digitZero: null,
     exceptions: {},
+  },
+  /*
+   * Fraktur's five holes are filled from Letterlike Symbols, where Unicode
+   * names them BLACK-LETTER rather than FRAKTUR — the same character under an
+   * older name. `alphabets.test.ts` lists those aliases.
+   */
+  fraktur: {
+    id: 'fraktur',
+    unicodeStyle: 'FRAKTUR',
+    capitalA: 0x1d504,
+    smallA: 0x1d51e,
+    digitZero: null,
+    exceptions: {
+      C: 0x212d,
+      H: 0x210c,
+      I: 0x2111,
+      R: 0x211c,
+      Z: 0x2128,
+    },
+  },
+  bold_fraktur: {
+    id: 'bold_fraktur',
+    unicodeStyle: 'BOLD FRAKTUR',
+    capitalA: 0x1d56c,
+    smallA: 0x1d586,
+    digitZero: null,
+    exceptions: {},
+  },
+  doublestruck: {
+    id: 'doublestruck',
+    unicodeStyle: 'DOUBLE-STRUCK',
+    capitalA: 0x1d538,
+    smallA: 0x1d552,
+    digitZero: 0x1d7d8,
+    exceptions: {
+      C: 0x2102,
+      H: 0x210d,
+      N: 0x2115,
+      P: 0x2119,
+      Q: 0x211a,
+      R: 0x211d,
+      Z: 0x2124,
+    },
   },
   sans: {
     id: 'sans',

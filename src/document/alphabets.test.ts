@@ -39,9 +39,18 @@ const DIGIT_NAMES = [
   'NINE',
 ];
 
-/** Letterlike Symbols whose name does not follow the "<STYLE> CAPITAL|SMALL <L>" pattern. */
+/**
+ * Letterlike Symbols whose name does not follow the "<STYLE> CAPITAL|SMALL <L>"
+ * pattern. Fraktur's five are all named BLACK-LETTER: they were encoded before
+ * the math block existed, under the older name for the same script.
+ */
 const LETTERLIKE_ALIASES: Readonly<Partial<Record<number, string>>> = {
   0x210e: 'PLANCK CONSTANT', // italic small h
+  0x212d: 'BLACK-LETTER CAPITAL C', // fraktur C
+  0x210c: 'BLACK-LETTER CAPITAL H', // fraktur H
+  0x2111: 'BLACK-LETTER CAPITAL I', // fraktur I
+  0x211c: 'BLACK-LETTER CAPITAL R', // fraktur R
+  0x2128: 'BLACK-LETTER CAPITAL Z', // fraktur Z
 };
 
 const hex = (cp: number): string => cp.toString(16).toUpperCase().padStart(4, '0');

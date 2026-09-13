@@ -25,6 +25,8 @@ export const STYLE_KINDS = [
   'bold_italic',
   'monospace',
   'script',
+  'fraktur',
+  'doublestruck',
   'sans',
 ] as const;
 export type StyleKind = (typeof STYLE_KINDS)[number];
