@@ -56,6 +56,7 @@ import {
 } from './icons';
 import { toggleList } from './lists';
 import { PostPreview } from './post-preview';
+import { StylePanel } from './style-panel';
 
 const SAMPLE = [
   'Unicode "bold" is not rich text.',
@@ -511,6 +512,24 @@ export function Editor() {
           {status}
         </p>
       </div>
+
+      {/*
+       * The toolbar styles a selection; this styles the whole post. Rendered
+       * from the plain source, so picking one specimen after another never
+       * compounds the styling.
+       */}
+      <section aria-labelledby={`${id}-styles`} className="card checks">
+        <h2 id={`${id}-styles`}>Every style</h2>
+        <p className="hint">
+          The whole post in one alphabet, without selecting anything. The plain text is untouched.
+        </p>
+        <StylePanel
+          text={plain}
+          onCopy={(styled, what) => {
+            void copy(styled, what);
+          }}
+        />
+      </section>
 
       <section aria-labelledby={`${id}-checks`} className="card checks">
         <h2 id={`${id}-checks`}>Checks</h2>
