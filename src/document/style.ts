@@ -11,6 +11,8 @@
  */
 
 import type { AlphabetId } from './alphabets';
+import { DECORATIONS } from './decorations';
+import type { Decoration } from './decorations';
 import type { StyleKind, StyleSet } from './grammar';
 
 /** Expand the `bold_italic` shorthand so equal styles compare equal. */
@@ -39,6 +41,12 @@ const FAMILY_PRECEDENCE = ['monospace', 'doublestruck', 'fraktur', 'script', 'sa
 export interface ResolvedStyle {
   /** `null` means unstyled: the source is emitted as-is. */
   readonly alphabet: AlphabetId | null;
+  /**
+   * Combining marks to append, in `DECORATIONS` order. Independent of
+   * `alphabet`: these compose with every family, so nothing is ever dropped to
+   * make room for them (ADR 0010).
+   */
+  readonly decorations: readonly Decoration[];
   /** Kinds present in the style that no Unicode alphabet can express together. */
   readonly dropped: readonly StyleKind[];
 }
@@ -47,34 +55,36 @@ export function resolveStyle(style: StyleSet): ResolvedStyle {
   const s = canonicalStyle(style);
   const bold = s.has('bold');
   const italic = s.has('italic');
+  const decorations = DECORATIONS.filter((decoration) => s.has(decoration));
   const families = FAMILY_PRECEDENCE.filter((family) => s.has(family));
   const dropped: StyleKind[] = families.slice(1);
   const family = families[0];
 
   if (family === undefined) {
-    if (bold) return { alphabet: italic ? 'bold_italic' : 'bold', dropped };
-    return { alphabet: italic ? 'italic' : null, dropped };
+    if (bold) return { alphabet: italic ? 'bold_italic' : 'bold', decorations, dropped };
+    return { alphabet: italic ? 'italic' : null, decorations, dropped };
   }
 
   switch (family) {
     case 'monospace':
       if (bold) dropped.push('bold');
       if (italic) dropped.push('italic');
-      return { alphabet: 'monospace', dropped };
+      return { alphabet: 'monospace', decorations, dropped };
     case 'script':
       if (italic) dropped.push('italic');
-      return { alphabet: bold ? 'bold_script' : 'script', dropped };
+      return { alphabet: bold ? 'bold_script' : 'script', decorations, dropped };
     case 'fraktur':
       // Unicode has bold fraktur but no italic one.
       if (italic) dropped.push('italic');
-      return { alphabet: bold ? 'bold_fraktur' : 'fraktur', dropped };
+      return { alphabet: bold ? 'bold_fraktur' : 'fraktur', decorations, dropped };
     case 'doublestruck':
       if (bold) dropped.push('bold');
       if (italic) dropped.push('italic');
-      return { alphabet: 'doublestruck', dropped };
+      return { alphabet: 'doublestruck', decorations, dropped };
     case 'sans':
-      if (bold) return { alphabet: italic ? 'sans_bold_italic' : 'sans_bold', dropped };
-      return { alphabet: italic ? 'sans_italic' : 'sans', dropped };
+      if (bold)
+        return { alphabet: italic ? 'sans_bold_italic' : 'sans_bold', decorations, dropped };
+      return { alphabet: italic ? 'sans_italic' : 'sans', decorations, dropped };
   }
 }
 

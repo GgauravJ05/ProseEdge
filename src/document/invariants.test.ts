@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import * as arb from './__fixtures__/arbitraries';
 import { glyph, isAsciiAlnum, isStyledCodepoint } from './alphabets';
+import { isDecorationMark, marksFor } from './decorations';
 import { paragraphsOf, sequentialIds, validate } from './grammar';
 import { clusters } from './graphemes';
 import { normalize } from './normalize';
@@ -77,7 +78,7 @@ describe('document invariants (spec §4.2)', () => {
     );
   });
 
-  it('3. provenance totality: every output code point maps to exactly one source code point', () => {
+  it('3. provenance totality: every output code point maps to exactly one source position', () => {
     fc.assert(
       fc.property(arb.document, (doc) => {
         const result = render(doc);
@@ -85,8 +86,19 @@ describe('document invariants (spec §4.2)', () => {
         const output = [...result.output];
         const sourceChars = [...source];
         expect(result.provenance).toHaveLength(output.length);
-        expect(sourceChars).toHaveLength(output.length);
         expect(result.sourceLength).toBe(source.length);
+        /*
+         * Not a bijection: a decoration is an extra output codepoint carrying
+         * the same source position as the character it decorates, so the output
+         * is longer than the source by exactly the number of marks (ADR 0010).
+         * What still holds — and is what the invariant is for — is that every
+         * output codepoint has exactly one source, and the mapping never goes
+         * backwards.
+         */
+        const marks = output.filter((ch) => isDecorationMark(ch)).length;
+        expect(sourceChars).toHaveLength(output.length - marks);
+        const sources = result.provenance.map((p) => p.source);
+        expect(sources).toEqual([...sources].sort((a, b) => a - b));
 
         const spans = new Map(
           paragraphsOf(doc)
@@ -111,15 +123,42 @@ describe('document invariants (spec §4.2)', () => {
           }
         };
 
+        /*
+         * Collected rather than asserted in the loop: a decoration mark takes a
+         * different check from a base character, and an `expect` inside that
+         * branch could silently never run. Gathering them also reports every
+         * mismatch instead of dying on the first.
+         */
+        const wrong: string[] = [];
         let offset = 0;
+        let read = 0;
         output.forEach((ch, i) => {
           const p = at(result.provenance, i);
-          const src = at(sourceChars, i);
-          expect(p.source).toBe(offset);
-          expect(normalize(ch)).toBe(src);
-          expect(claimed(p, ch, src.length)).toBe(src);
+          const where = `output[${String(i)}] ${JSON.stringify(ch)}`;
+          if (isDecorationMark(ch)) {
+            // A mark belongs to the character before it, and adds no source.
+            const base = at(result.provenance, i - 1).source;
+            if (p.source !== base) {
+              wrong.push(`${where}: mark claims ${String(p.source)}, base is ${String(base)}`);
+            }
+            return;
+          }
+          const src = at(sourceChars, read);
+          read += 1;
+          if (p.source !== offset) {
+            wrong.push(`${where}: claims ${String(p.source)}, expected ${String(offset)}`);
+          }
+          if (normalize(ch) !== src)
+            wrong.push(`${where}: normalizes to ${normalize(ch)}, not ${src}`);
+          if (claimed(p, ch, src.length) !== src) {
+            wrong.push(
+              `${where}: provenance text is ${String(claimed(p, ch, src.length))}, not ${src}`,
+            );
+          }
           offset += src.length;
         });
+        expect(wrong).toEqual([]);
+        expect(read).toBe(sourceChars.length);
       }),
     );
   });
@@ -149,12 +188,18 @@ describe('document invariants (spec §4.2)', () => {
         paragraphs.forEach((p, i) => {
           let start = at(result.layout, i).source;
           for (const span of p.spans) {
-            const { alphabet } = resolveStyle(span.style);
+            const { alphabet, decorations } = resolveStyle(span.style);
             for (const c of clusters(span.text)) {
               const out = emitted(result, start + c.index, start + c.index + c.text.length);
               const styled = alphabet === null ? null : glyph(alphabet, c.text);
+              /*
+               * A decorated cluster emits its base followed by the marks, so the
+               * expected text carries them too. Only ASCII letters and digits
+               * take a mark, which is what keeps invariant 4 intact (ADR 0010).
+               */
+              const marks = isAsciiAlnum(c.text) ? marksFor(decorations) : '';
               // Either the exact glyph, or left as source: never a lookalike.
-              expect(out).toBe(styled ?? c.text);
+              expect(out).toBe((styled ?? c.text) + marks);
               if (styled !== null || alphabet === null || WHITESPACE.test(c.text)) continue;
               expected.push({
                 span: span.id,

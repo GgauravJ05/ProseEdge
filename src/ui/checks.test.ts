@@ -12,8 +12,39 @@ const b = builder(sequentialIds());
 
 describe('postStats', () => {
   it('counts characters, styled letters, words and lines', () => {
-    expect(postStats('ℋ𝒾 7!\n👍🏽')).toEqual({ characters: 7, styled: 2, words: 3, lines: 2 });
-    expect(postStats('')).toEqual({ characters: 0, styled: 0, words: 0, lines: 1 });
+    expect(postStats('ℋ𝒾 7!\n👍🏽')).toEqual({
+      characters: 7,
+      styled: 2,
+      decorated: 0,
+      words: 3,
+      lines: 2,
+    });
+    expect(postStats('')).toEqual({
+      characters: 0,
+      styled: 0,
+      decorated: 0,
+      words: 0,
+      lines: 1,
+    });
+  });
+
+  it('counts decorated letters apart from substituted ones', () => {
+    /*
+     * A decorated letter is a plain letter plus a combining mark, so it is not
+     * a styled codepoint at all: counting the two together would hide the one
+     * that is worse for a screen reader behind the one that is better
+     * (ADR 0010). `characters` stays 2, because a mark joins its base cluster.
+     */
+    const underlined = 'a̲b̲';
+    expect(postStats(underlined)).toEqual({
+      characters: 2,
+      styled: 0,
+      decorated: 2,
+      words: 1,
+      lines: 1,
+    });
+    // Substituted and decorated at once: both counts see it.
+    expect(postStats('\u{1D41A}̲')).toMatchObject({ styled: 1, decorated: 1, characters: 1 });
   });
 });
 

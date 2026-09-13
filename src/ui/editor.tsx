@@ -31,9 +31,10 @@ import {
   canEmphasize,
   selectionState,
   setFamily,
+  toggleDecoration,
   toggleEmphasis,
 } from './commands';
-import type { Emphasis, Family } from './commands';
+import type { Decoration, Emphasis, Family } from './commands';
 import { browserDrafts } from './draft';
 import {
   BoldIcon,
@@ -48,7 +49,9 @@ import {
   PreviewIcon,
   ReadingIcon,
   RestoreIcon,
+  StrikethroughIcon,
   StructureIcon,
+  UnderlineIcon,
   WarningIcon,
 } from './icons';
 import { toggleList } from './lists';
@@ -228,6 +231,10 @@ export function Editor() {
     change((current, selected) => toggleEmphasis(current, selected, emphasis));
   };
 
+  const decorate = (decoration: Decoration) => {
+    change((current, selected) => toggleDecoration(current, selected, decoration));
+  };
+
   const list = (marker: ListMarker) => {
     const el = textarea.current;
     if (el === null) return;
@@ -317,6 +324,32 @@ export function Editor() {
             >
               <ItalicIcon />
               Italic
+            </button>
+            {/*
+             * Never disabled: a combining mark composes with every alphabet, so
+             * unlike bold and italic there is no family that cannot take one.
+             */}
+            <button
+              type="button"
+              aria-pressed={state.underline === 'on'}
+              disabled={state.families.size === 0}
+              onClick={() => {
+                decorate('underline');
+              }}
+            >
+              <UnderlineIcon />
+              Underline
+            </button>
+            <button
+              type="button"
+              aria-pressed={state.strikethrough === 'on'}
+              disabled={state.families.size === 0}
+              onClick={() => {
+                decorate('strikethrough');
+              }}
+            >
+              <StrikethroughIcon />
+              Strikethrough
             </button>
           </div>
           <div role="group" aria-label="Lists" className="group">
@@ -502,6 +535,26 @@ export function Editor() {
               : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
           </span>
         </p>
+        {/*
+         * Counted and warned about separately from substituted letters, because
+         * the two fail differently: a reader that folds mathematical
+         * alphanumerics back to ASCII still meets the combining mark (ADR 0010).
+         */}
+        {stats.decorated > 0 && (
+          <p className="check notice">
+            <WarningIcon />
+            <span>
+              {count(
+                stats.decorated,
+                'underlined or struck letter',
+                'underlined or struck letters',
+              )}
+              . These are a plain letter plus a combining mark, so each one costs two characters and
+              a screen reader may announce the mark or split it from its letter. They are the
+              riskiest styling here.
+            </span>
+          </p>
+        )}
         {stats.styled > 0 ? (
           <p className="check notice">
             <WarningIcon />

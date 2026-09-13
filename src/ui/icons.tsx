@@ -172,6 +172,24 @@ export function FoldIcon() {
   );
 }
 
+export function UnderlineIcon() {
+  return (
+    <Icon>
+      <path d="M6.5 4v6.5a5.5 5.5 0 0 0 11 0V4" />
+      <path d="M5 20.5h14" />
+    </Icon>
+  );
+}
+
+export function StrikethroughIcon() {
+  return (
+    <Icon>
+      <path d="M4 12h16" />
+      <path d="M7.5 7.4A3.6 3.6 0 0 1 11.2 4h2.3a3.4 3.4 0 0 1 3.3 2.6M16.5 16a3.7 3.7 0 0 1-3.7 3.9h-1.6A3.9 3.9 0 0 1 7.2 17" />
+    </Icon>
+  );
+}
+
 export function PreviewIcon() {
   return (
     <Icon>

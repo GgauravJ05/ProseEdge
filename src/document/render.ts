@@ -11,6 +11,7 @@
 
 import { glyph, isAsciiAlnum } from './alphabets';
 import type { AlphabetId } from './alphabets';
+import { marksFor } from './decorations';
 import type { Document, ListMarker, NodeId, Paragraph, Span, SpanId, StyleKind } from './grammar';
 import { clusters } from './graphemes';
 import { resolveStyle } from './style';
@@ -89,6 +90,8 @@ interface SpanBounds {
   readonly start: number;
   readonly end: number;
   readonly alphabet: AlphabetId | null;
+  /** Combining marks appended to each ASCII letter or digit, or '' for none. */
+  readonly marks: string;
 }
 
 function run(doc: Document, styled: boolean): RenderResult {
@@ -117,7 +120,13 @@ function run(doc: Document, styled: boolean): RenderResult {
       }
       const start = text.length;
       text += span.text;
-      bounds.push({ span, start, end: text.length, alphabet: styled ? resolved.alphabet : null });
+      bounds.push({
+        span,
+        start,
+        end: text.length,
+        alphabet: styled ? resolved.alphabet : null,
+        marks: styled ? marksFor(resolved.decorations) : '',
+      });
     }
     layout.push({ paragraph: p.id, source, length: text.length });
 
@@ -151,9 +160,30 @@ function run(doc: Document, styled: boolean): RenderResult {
         }
       }
 
+      /*
+       * Decorations follow the same coverage rule as the alphabets: only an
+       * ASCII letter or digit takes one. Appending a combining mark to an emoji
+       * or a ZWJ sequence would modify a cluster that invariant 4 guarantees
+       * passes through unmodified, and usually renders broken (ADR 0010).
+       */
+      const marks = isAsciiAlnum(cluster.text) ? owner.marks : '';
+
+      /*
+       * Each mark is its own output codepoint carrying the same `source` as the
+       * character it decorates. Provenance stays total and monotonic but is no
+       * longer one-to-one, which is invariant 3 as refined in ADR 0010.
+       */
+      const decorate = (span: SpanId, spanOffset: number): void => {
+        for (const mark of marks) {
+          parts.push(mark);
+          provenance.push({ kind: 'span', span, offset: spanOffset, source });
+        }
+      };
+
       if (mapped !== null) {
         parts.push(mapped);
         provenance.push({ kind: 'span', span: owner.span.id, offset, source });
+        decorate(owner.span.id, offset);
         source += cluster.text.length;
         continue;
       }
@@ -163,8 +193,10 @@ function run(doc: Document, styled: boolean): RenderResult {
         const b = ownerOf(at16);
         parts.push(ch);
         provenance.push({ kind: 'span', span: b.span.id, offset: at16 - b.start, source });
-        source += ch.length;
         at16 += ch.length;
+        // A decorated cluster is a single ASCII character, so this runs once.
+        if (marks !== '') decorate(b.span.id, at16 - ch.length - b.start);
+        source += ch.length;
       }
     }
   };
