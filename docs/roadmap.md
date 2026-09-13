@@ -58,60 +58,43 @@ project on 2026-09-11: production follows `main` at
 <https://proseedge.vercel.app>, and every pull request gets a preview. The
 CI-driven deploy proposed in #7 was closed as redundant.
 
-Follow-up PR: remove the unused Cloudflare Pages workflow and `wrangler`, add
-security headers in `vercel.json` (Content-Security-Policy, `nosniff`, referrer
-policy, no framing), and record the Git integration in ADR 0004.
+Followed by #17 (deploy through the Git integration, ADR 0008) and #18 (security
+headers in `vercel.json`, tested against the preview server so a broken
+Content-Security-Policy fails CI rather than production).
 
-### M1 · v0.1 Formatter (three PRs)
+### M1 · v0.1 Formatter — done
 
-The editor already on `main` (`src/ui/style-preview.tsx`) styles a selection
-bold, italic or monospace and restores plain text. M1 turns it into a tool
-someone would bookmark.
+Shipped as #11 (toolbar and copy), #12 (post checks, saved drafts, feature
+flags) and #13 (launch polish), then extended well past the original three:
 
-**PR 1 — `feat(app): formatter toolbar and copy`**
+- Six alphabets — serif, sans, script, fraktur, double-struck, monospace — with
+  bold and italic where Unicode has them, and the combination disabled where it
+  does not (ADR 0002). Underline and strikethrough are combining marks rather
+  than alphabets, so they compose with every family (ADR 0010).
+- The plain text beside the styled post, always, and copyable on its own.
+- **Every style** as a one-click copy of the whole post, for when no selection
+  is wanted.
+- Uppercase and lowercase as transforms rather than styles: they rewrite the
+  post, so the plain pane changes with them.
+- Checks: character, word and line counts; characters a style could not reach;
+  styled and decorated letters counted separately, because a substituted letter
+  and a combining mark fail differently for a screen reader.
+- Drafts saved in this browser, a landing page at `/` with the formatter at
+  `/format`, light and dark themes, and an axe scan of every page in CI.
 
-- Font family (serif, sans, script, monospace) plus bold and italic toggles.
-  This mirrors how styles resolve (ADR 0002), so impossible combinations such as
-  bold monospace are disabled rather than silently dropped.
-- Toggle buttons show whether the selection already carries a style
-  (`aria-pressed`, from `styleState`).
-- Typing inside styled text continues that style.
-- **Copy styled** and **Copy plain text**.
-- Pasting already-styled text keeps its styles (`fromText` recovers them).
-- Keyboard shortcuts: Ctrl/⌘+B and Ctrl/⌘+I.
+### M2 · v0.2 Structure and fold — done
 
-**PR 2 — `feat(app): post checks`**
-
-- Character count.
-- **Screen-reader notice:** how many characters are styled, and that screen
-  readers may announce them as mathematical symbols or skip them. It is a count,
-  not a score; the calibrated score arrives with M3.
-- A live preview that highlights characters left unstyled because their style
-  has no glyph (digits in script, punctuation).
-- The draft is saved in the browser (`localStorage`) and survives a reload.
-- Feature flags module, so later work can merge early.
-
-**PR 3 — `feat(app): launch polish`**
-
-- Visual design, dark mode, and a layout that works at phone width.
-- The app itself is accessible: keyboard-only operation, and an automated axe
-  scan in the end-to-end suite.
-- Title, description, favicon, social preview image, 404 page.
-- Vercel Web Analytics (page views only) and a short privacy note saying
-  exactly what is and is not collected.
-- README: link to the live app and the current status.
-
-**Exit:** the three PRs are merged and live, the end-to-end and accessibility
-checks are green, and the release PR for `v0.1.0` is ready.
-
-### M2 · v0.2 Structure and fold (no model)
-
-- Hook / body / call-to-action structure, detected from the text (spec §4.1),
-  and bullet or numbered list commands.
-- Readability (Flesch–Kincaid grade) on the plain source.
-- "…see more" fold preview, estimated from measured glyph widths rather than
-  character counts (spec §3). It stays behind a flag until the platform's fold
-  rule is measured.
+- Hook / body / call-to-action structure detected from the text (spec §4.1),
+  with bulleted, numbered and checklist commands.
+- Readability (Flesch–Kincaid) computed on the plain source, never the symbols.
+- Per-platform targets — LinkedIn, X, Instagram, Threads — each counting in its
+  own unit, so the meter shows that styling is free on X and costs double where
+  code units are counted.
+- A preview laying the post out at the target feed's own column width and type
+  size (ADR 0009). It imitates layout, never brand: no logo or brand colour.
+- "…see more" fold estimated from measured glyph widths rather than character
+  counts (spec §3). It stays behind the `foldPreview` flag, off in production,
+  until a platform's fold rule is actually measured.
 
 Accessible export that keeps emphasis through structure (spec §7.4) moves to
 M3: which structural cues survive a screen reader is exactly what that study
@@ -129,9 +112,11 @@ measures.
 
 ### M4 · v0.4 Opening feedback, experimental (spec phases 3–6)
 
-- **Phase 3 (in progress):** full Hacker News history is being collected (#8);
-  pairing, time splits and leak checks are in review (#9). Next: the data PR
-  with every manifest, final split dates, then the four baselines.
+- **Phase 3 (data landed):** the full Hacker News history is collected — 238
+  monthly snapshots, 4,727,774 stories — with the collector (#8), stratified
+  pairing with time splits and leak checks (#29, ADR 0006) and every manifest
+  (#30) on `main`. Next: choose the real train / validation / test boundaries
+  over that history, then the four §5.2 baselines.
 - **Phase 4:** teacher model; it must beat TF-IDF on the time split.
 - **Phase 5:** distillation, ONNX export with a parity check, INT8, and the
   size/accuracy/latency table.
@@ -154,11 +139,12 @@ card, and documentation. If time runs short, M5 and M6 are cut before M3 or M4.
 
 ## Lanes at a glance
 
-|       | Web app                | Research                                                            |
-| :---- | :--------------------- | :------------------------------------------------------------------ |
-| Now   | M1 formatter           | HN collection running; #8, #9 in review                             |
-| Next  | M2 structure and fold  | Data PR, split dates, baselines; start the screen-reader recordings |
-| Later | M3, M4 UI behind flags | Teacher, compression, browser runtime                               |
+|       | Web app                             | Research                                                   |
+| :---- | :---------------------------------- | :--------------------------------------------------------- |
+| Done  | M1 formatter, M2 structure and fold | Collection, pairing and manifests on `main`                |
+| Now   | v0.1.0 release                      | Split boundaries over the full history, then the baselines |
+| Next  | M3 accessibility study              | Start the VoiceOver and NVDA recordings; teacher model     |
+| Later | M4 UI behind flags                  | Compression, browser runtime                               |
 
 ## Risks
 
