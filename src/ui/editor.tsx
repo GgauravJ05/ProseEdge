@@ -40,6 +40,7 @@ import {
   BoldIcon,
   BulletListIcon,
   CheckIcon,
+  ChecklistIcon,
   ClearIcon,
   CopyIcon,
   FoldIcon,
@@ -371,6 +372,15 @@ export function Editor() {
             >
               <NumberedListIcon />
               Numbered list
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                list('checklist');
+              }}
+            >
+              <ChecklistIcon />
+              Checklist
             </button>
           </div>
           <div role="group" aria-label="Reset" className="group">

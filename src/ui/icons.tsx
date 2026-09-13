@@ -83,6 +83,17 @@ export function BulletListIcon() {
   );
 }
 
+export function ChecklistIcon() {
+  return (
+    <Icon>
+      <path d="M10 6h10M10 12h10M10 18h10" />
+      <rect x="3" y="4.4" width="4" height="4" rx="1" />
+      <rect x="3" y="10.4" width="4" height="4" rx="1" />
+      <rect x="3" y="16.4" width="4" height="4" rx="1" />
+    </Icon>
+  );
+}
+
 export function NumberedListIcon() {
   return (
     <Icon>

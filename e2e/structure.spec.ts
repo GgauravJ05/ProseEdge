@@ -41,6 +41,29 @@ test('list buttons add, switch and remove markers on the selected lines', async 
   await expect(checks).not.toContainText('list');
 });
 
+test('a checklist writes boxes, and swaps with the other markers', async ({ page }) => {
+  const post = page.getByLabel('Post');
+  const checks = page.getByRole('region', { name: 'Checks' });
+  const plain = 'Opening line\n\nfirst point\nsecond point';
+  await post.fill(plain);
+  await select(post, plain.indexOf('first'), plain.length);
+
+  await page.getByRole('button', { name: 'Checklist' }).click();
+  await expect(post).toHaveValue('Opening line\n\n☐ first point\n☐ second point');
+  await expect(checks).toContainText('Structure: 1 opening line · 1 list');
+
+  // Switching replaces the box rather than stacking a bullet in front of it.
+  await page.getByRole('button', { name: 'Bulleted list' }).click();
+  await expect(post).toHaveValue('Opening line\n\n• first point\n• second point');
+
+  await page.getByRole('button', { name: 'Checklist' }).click();
+  await expect(post).toHaveValue('Opening line\n\n☐ first point\n☐ second point');
+
+  // Toggling the same marker again removes it.
+  await page.getByRole('button', { name: 'Checklist' }).click();
+  await expect(post).toHaveValue(plain);
+});
+
 test('styled list items keep their styles', async ({ page }) => {
   const post = page.getByLabel('Post');
   await post.fill('Opening\n\nfirst point');

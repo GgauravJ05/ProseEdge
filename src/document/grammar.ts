@@ -53,7 +53,14 @@ export interface Paragraph {
   readonly spans: readonly Span[];
 }
 
-export type ListMarker = 'bullet' | 'numbered';
+/**
+ * Bulleted, numbered, or a checklist.
+ *
+ * A checklist uses U+2610 BALLOT BOX, a single codepoint the formatter never
+ * styles and `normalize` leaves alone — the same terms the bullet already sits
+ * on, so a checklist survives a round-trip like any other list.
+ */
+export type ListMarker = 'bullet' | 'numbered' | 'checklist';
 
 export interface List {
   readonly kind: 'list';

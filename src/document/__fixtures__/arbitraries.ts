@@ -116,7 +116,9 @@ const blockData: fc.Arbitrary<BlockData> = fc.oneof(
   paragraphData.map((spans) => ({ kind: 'paragraph' as const, spans })),
   fc.record({
     kind: fc.constant('list' as const),
-    marker: fc.constantFrom<ListMarker>('bullet', 'numbered'),
+    // Every marker the grammar has: a generator that covers only some of a
+    // union quietly stops testing the rest of it.
+    marker: fc.constantFrom<ListMarker>('bullet', 'numbered', 'checklist'),
     items: fc.array(paragraphData, { minLength: 1, maxLength: 3 }),
   }),
 );

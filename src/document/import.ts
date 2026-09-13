@@ -22,9 +22,11 @@ function listAt(
   const first = lines[start] ?? '';
   const marker: ListMarker | null = first.startsWith(listMarker('bullet', 0))
     ? 'bullet'
-    : first.startsWith(listMarker('numbered', 0))
-      ? 'numbered'
-      : null;
+    : first.startsWith(listMarker('checklist', 0))
+      ? 'checklist'
+      : first.startsWith(listMarker('numbered', 0))
+        ? 'numbered'
+        : null;
   if (marker === null) return null;
   const items: string[] = [];
   for (let k = 0; start + k < lines.length; k += 1) {
@@ -44,7 +46,7 @@ function listAt(
  *   of them, otherwise the first line.
  * - **Call to action:** a final line that is nothing but a URL.
  * - **Lists:** consecutive body lines starting with exactly the markers the
- *   renderer writes (`• `, or `1. `, `2. `, … in order).
+ *   renderer writes (`• `, `☐ `, or `1. `, `2. `, … in order).
  * - Everything else is a body paragraph; blank lines are empty paragraphs.
  *
  * Structure only decides where text lives, never what it is, so import is

@@ -70,7 +70,15 @@ describe('fromText', () => {
   });
 
   it('reads the renderer’s list markers back as lists', () => {
-    const doc = fromText('Opening\n\n• 𝐅𝐚𝐬𝐭\n• small\n1. one\n2. two\n4. four\n- dash');
+    /*
+     * Every marker the renderer writes has to come back as a list. A marker
+     * the renderer emits but this function does not recognise round-trips into
+     * plain paragraphs, silently losing the structure — which is exactly what
+     * the checklist did until it was added here.
+     */
+    const doc = fromText(
+      'Opening\n\n• 𝐅𝐚𝐬𝐭\n• small\n☐ todo\n☐ later\n1. one\n2. two\n4. four\n- dash\n☑ ticked',
+    );
     const [, body] = doc.sections;
     expect(body?.kind).toBe('body');
     if (body?.kind !== 'body') return;
@@ -83,9 +91,12 @@ describe('fromText', () => {
     ).toEqual([
       ['paragraph', ''],
       ['bullet', ['Fast', 'small']],
+      ['checklist', ['todo', 'later']],
       ['numbered', ['one', 'two']],
       ['paragraph', '4. four'],
       ['paragraph', '- dash'],
+      // A ticked box is not a marker this app writes, so it stays body text.
+      ['paragraph', '☑ ticked'],
     ]);
   });
 
