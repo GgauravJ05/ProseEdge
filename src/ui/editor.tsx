@@ -35,6 +35,8 @@ import {
   toggleEmphasis,
 } from './commands';
 import type { Decoration, Emphasis, Family } from './commands';
+import { recase } from './case';
+import type { CaseTransform } from './case';
 import { browserDrafts } from './draft';
 import {
   BoldIcon,
@@ -45,6 +47,7 @@ import {
   CopyIcon,
   FoldIcon,
   ItalicIcon,
+  LowercaseIcon,
   NumberedListIcon,
   PlainTextIcon,
   PreviewIcon,
@@ -53,6 +56,7 @@ import {
   StrikethroughIcon,
   StructureIcon,
   UnderlineIcon,
+  UppercaseIcon,
   WarningIcon,
 } from './icons';
 import { toggleList } from './lists';
@@ -245,6 +249,20 @@ export function Editor() {
     edit(next.text, toSource(next.text, next.start, next.end));
   };
 
+  /*
+   * Case is a transform, not a style: it rewrites the post rather than dressing
+   * it, so it travels the text path like the list commands and not the styling
+   * one. `applyEdit` re-imports the result, which is what keeps styled letters
+   * in the post intact around the recased words.
+   */
+  const transformCase = (transform: CaseTransform) => {
+    const el = textarea.current;
+    if (el === null) return;
+    const next = recase(el.value, el.selectionStart, el.selectionEnd, transform);
+    el.focus();
+    edit(next.text, toSource(next.text, next.start, next.end));
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
     const key = event.key.toLowerCase();
@@ -381,6 +399,30 @@ export function Editor() {
             >
               <ChecklistIcon />
               Checklist
+            </button>
+          </div>
+          {/*
+           * Its own group, away from the styles: these change the words, and
+           * the plain pane changes with them. Nothing else in this toolbar does.
+           */}
+          <div role="group" aria-label="Case" className="group">
+            <button
+              type="button"
+              onClick={() => {
+                transformCase('upper');
+              }}
+            >
+              <UppercaseIcon />
+              Uppercase
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                transformCase('lower');
+              }}
+            >
+              <LowercaseIcon />
+              Lowercase
             </button>
           </div>
           <div role="group" aria-label="Reset" className="group">

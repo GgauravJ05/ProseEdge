@@ -83,6 +83,24 @@ export function BulletListIcon() {
   );
 }
 
+export function UppercaseIcon() {
+  return (
+    <Icon>
+      <path d="M3 19 8.5 5l5.5 14M5 14.5h7" />
+      <path d="M16.5 19V9.5M16.5 19h4.5" />
+    </Icon>
+  );
+}
+
+export function LowercaseIcon() {
+  return (
+    <Icon>
+      <path d="M4 12.2a3.4 3.4 0 0 1 6.6 1.1V19M10.6 15.8a3.2 3.2 0 1 0-3.2 3.2 3.3 3.3 0 0 0 3.2-2" />
+      <path d="M20 5v14M20 15.8a3.2 3.2 0 1 0-3.2 3.2 3.3 3.3 0 0 0 3.2-2" />
+    </Icon>
+  );
+}
+
 export function ChecklistIcon() {
   return (
     <Icon>
