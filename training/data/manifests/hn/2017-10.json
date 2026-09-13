@@ -1,0 +1,16 @@
+{
+  "date_from": "2017-10-01",
+  "date_to": "2017-10-31",
+  "file": "hn/2017-10.jsonl",
+  "filters": {
+    "api": "https://hn.algolia.com/api/v1/search_by_date",
+    "collected_on": "2026-09-12",
+    "settle_days": "14",
+    "skipped_hits": "0",
+    "tags": "story"
+  },
+  "format": 1,
+  "rows": 23869,
+  "sha256": "1da6e1d1003c984d51f9d26781ba5179824e076972d9b8a59971389fe19b0486",
+  "source": "hacker-news"
+}

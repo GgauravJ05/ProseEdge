@@ -1,0 +1,16 @@
+{
+  "date_from": "2013-11-01",
+  "date_to": "2013-11-30",
+  "file": "hn/2013-11.jsonl",
+  "filters": {
+    "api": "https://hn.algolia.com/api/v1/search_by_date",
+    "collected_on": "2026-09-11",
+    "settle_days": "14",
+    "skipped_hits": "0",
+    "tags": "story"
+  },
+  "format": 1,
+  "rows": 22296,
+  "sha256": "0591b19332c6348ce9b81e9d60ce011cd5677154a9ac8159def84e4567990edb",
+  "source": "hacker-news"
+}

@@ -1,7 +1,7 @@
 {
-  "date_from": "2026-07-01",
-  "date_to": "2026-07-31",
-  "file": "hn/2026-07.jsonl",
+  "date_from": "2019-09-01",
+  "date_to": "2019-09-30",
+  "file": "hn/2019-09.jsonl",
   "filters": {
     "api": "https://hn.algolia.com/api/v1/search_by_date",
     "collected_on": "2026-09-12",
@@ -10,7 +10,7 @@
     "tags": "story"
   },
   "format": 1,
-  "rows": 31283,
-  "sha256": "e61fe9548aa4e87256558a4847a4914f312da12be564cff52a2c4361ae9b59a0",
+  "rows": 24895,
+  "sha256": "452cf93bdf5a4bd9d7fc34ca1ec239ff9ab0f88082d57c341f9e96db0e8e6082",
   "source": "hacker-news"
 }
