@@ -65,6 +65,8 @@ const FAMILY_LABELS: Readonly<Record<Family, string>> = {
   serif: 'Serif',
   sans: 'Sans',
   script: 'Script',
+  fraktur: 'Fraktur',
+  doublestruck: 'Double',
   monospace: 'Mono',
 };
 

@@ -34,7 +34,7 @@ export function styleEquals(a: StyleSet, b: StyleSet): boolean {
 }
 
 /** Font families, highest precedence first. Serif is the implicit default. */
-const FAMILY_PRECEDENCE = ['monospace', 'script', 'sans'] as const;
+const FAMILY_PRECEDENCE = ['monospace', 'doublestruck', 'fraktur', 'script', 'sans'] as const;
 
 export interface ResolvedStyle {
   /** `null` means unstyled: the source is emitted as-is. */
@@ -64,6 +64,14 @@ export function resolveStyle(style: StyleSet): ResolvedStyle {
     case 'script':
       if (italic) dropped.push('italic');
       return { alphabet: bold ? 'bold_script' : 'script', dropped };
+    case 'fraktur':
+      // Unicode has bold fraktur but no italic one.
+      if (italic) dropped.push('italic');
+      return { alphabet: bold ? 'bold_fraktur' : 'fraktur', dropped };
+    case 'doublestruck':
+      if (bold) dropped.push('bold');
+      if (italic) dropped.push('italic');
+      return { alphabet: 'doublestruck', dropped };
     case 'sans':
       if (bold) return { alphabet: italic ? 'sans_bold_italic' : 'sans_bold', dropped };
       return { alphabet: italic ? 'sans_italic' : 'sans', dropped };
@@ -76,6 +84,9 @@ const ALPHABET_STYLE: Readonly<Record<AlphabetId, readonly StyleKind[]>> = {
   bold_italic: ['bold', 'italic'],
   script: ['script'],
   bold_script: ['script', 'bold'],
+  fraktur: ['fraktur'],
+  bold_fraktur: ['fraktur', 'bold'],
+  doublestruck: ['doublestruck'],
   sans: ['sans'],
   sans_bold: ['sans', 'bold'],
   sans_italic: ['sans', 'italic'],

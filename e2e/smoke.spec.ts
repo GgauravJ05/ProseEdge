@@ -74,6 +74,20 @@ test('fonts disable the emphasis Unicode does not have', async ({ page }) => {
   await expect(bold).toBeEnabled();
   await expect(italic).toBeDisabled();
 
+  // Fraktur has a bold form in Unicode but no italic one, like script.
+  await page.getByRole('button', { name: 'Fraktur' }).click();
+  await expect(page.getByRole('button', { name: 'Fraktur' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(bold).toBeEnabled();
+  await expect(italic).toBeDisabled();
+
+  // Double-struck has neither, like monospace.
+  await page.getByRole('button', { name: 'Double' }).click();
+  await expect(bold).toBeDisabled();
+  await expect(italic).toBeDisabled();
+
   await page.getByRole('button', { name: 'Sans' }).click();
   await italic.click();
   expect((await post.inputValue()).normalize('NFKC')).toBe(plain);

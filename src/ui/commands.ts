@@ -25,17 +25,31 @@ import {
 } from '../document';
 import type { Document, IdFactory, RenderResult, StyleSet, TextRange } from '../document';
 
-export const FAMILIES = ['serif', 'sans', 'script', 'monospace'] as const;
+export const FAMILIES = [
+  'serif',
+  'sans',
+  'script',
+  'fraktur',
+  'doublestruck',
+  'monospace',
+] as const;
 export type Family = (typeof FAMILIES)[number];
 export type Emphasis = 'bold' | 'italic';
 
-const FAMILY_KINDS = ['sans', 'script', 'monospace'] as const;
+const FAMILY_KINDS = ['sans', 'script', 'fraktur', 'doublestruck', 'monospace'] as const;
 const EMPHASES: readonly Emphasis[] = ['bold', 'italic'];
 
-/** The family a style renders in, using the renderer's precedence (ADR 0002). */
+/**
+ * The family a style renders in, using the renderer's precedence (ADR 0002).
+ *
+ * The order here must match `FAMILY_PRECEDENCE` in style.ts: if it does not,
+ * the toolbar shows one family pressed while the renderer emits another.
+ */
 export function familyOf(style: StyleSet): Family {
   const s = canonicalStyle(style);
   if (s.has('monospace')) return 'monospace';
+  if (s.has('doublestruck')) return 'doublestruck';
+  if (s.has('fraktur')) return 'fraktur';
   if (s.has('script')) return 'script';
   if (s.has('sans')) return 'sans';
   return 'serif';
@@ -47,8 +61,11 @@ export function supports(family: Family, emphasis: Emphasis): boolean {
     case 'serif':
     case 'sans':
       return true;
+    // Unicode has a bold form of each of these, but no italic one.
     case 'script':
+    case 'fraktur':
       return emphasis === 'bold';
+    case 'doublestruck':
     case 'monospace':
       return false;
   }

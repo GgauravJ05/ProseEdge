@@ -54,10 +54,20 @@ export const CLUSTERS: readonly string[] = [
   'ﬁ',
   'Ａ',
   '²',
-  // Mathematical and Letterlike codepoints ProseEdge never emits, so they are
-  // legitimate source: bold capital alpha, double-struck A, degree Celsius.
+  /*
+   * Mathematical and Letterlike codepoints ProseEdge never emits, so they are
+   * legitimate source: bold capital alpha (Greek, which no alphabet here
+   * covers) and degree Celsius.
+   *
+   * Nothing styleable may appear in this list. Span text is the canonical
+   * unstyled source, so a codepoint the formatter can emit is not valid input
+   * and `validate` rejects a document containing one. Double-struck A
+   * (U+1D538) lived here until the double-struck alphabet was added, at which
+   * point it became output rather than source; the "every cluster is
+   * legitimate source" test below now enforces that rule instead of leaving it
+   * to a comment.
+   */
   '\u{1D6A8}',
-  '\u{1D538}',
   '℃',
   // A lone surrogate, as a textarea can produce mid-edit.
   '\uD800',
