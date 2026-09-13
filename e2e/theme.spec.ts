@@ -48,8 +48,29 @@ test('the theme applies before the first paint', async ({ page }) => {
   await page.goto('/format');
   await page.getByRole('button', { name: 'Switch to dark theme' }).click();
   await page.reload({ waitUntil: 'commit' });
-  // Read as early as the document exists: the inline script has already run.
-  const early = await page.evaluate(() => document.documentElement.dataset.theme);
+
+  /*
+   * Read the moment a <body> exists, not the moment the navigation commits.
+   *
+   * The inline script is render-blocking in <head>, so the body cannot exist
+   * until it has run. That makes "the theme is already applied by the time
+   * there is anything to paint" a deterministic claim rather than a race.
+   * Reading straight after `commit` sampled the document before the script had
+   * executed and failed about one run in three when the machine was busy.
+   */
+  const early = await page.evaluate(async () => {
+    // `readyState` rather than a `document.body === null` check: the body is
+    // genuinely absent this early, but TypeScript types it as non-nullable, so
+    // comparing it to null is an error the linter rightly rejects.
+    if (document.readyState === 'loading') {
+      await new Promise<void>((resolve) => {
+        document.addEventListener('DOMContentLoaded', () => {
+          resolve();
+        });
+      });
+    }
+    return document.documentElement.dataset.theme;
+  });
   expect(early).toBe('dark');
 });
 
