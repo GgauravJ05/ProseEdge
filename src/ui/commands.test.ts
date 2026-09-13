@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import * as arb from '../document/__fixtures__/arbitraries';
 import {
+  DECORATION_MARKS,
   builder,
   fromText,
   normalize,
@@ -26,6 +27,7 @@ import {
   selectionState,
   setFamily,
   supports,
+  toggleDecoration,
   toggleEmphasis,
 } from './commands';
 
@@ -68,13 +70,26 @@ describe('selectionState', () => {
       families: new Set(['serif']),
       bold: 'off',
       italic: 'off',
+      underline: 'off',
+      strikethrough: 'off',
     });
     const sansBold = fromText('𝗛𝗶');
     expect(selectionState(sansBold, everything(sansBold))).toEqual({
       families: new Set(['sans']),
       bold: 'on',
       italic: 'off',
+      underline: 'off',
+      strikethrough: 'off',
     });
+  });
+
+  it('reports decorations, which every family can carry', () => {
+    const doc = b.document(b.hook(b.paragraph(b.span('ab', ['underline']))));
+    const state = selectionState(doc, everything(doc));
+    expect(state.underline).toBe('on');
+    expect(state.strikethrough).toBe('off');
+    // A decoration is not an emphasis: no family refuses it.
+    expect(state.families).toEqual(new Set(['serif']));
   });
 
   it('is off when only part of the selection has the emphasis', () => {
@@ -90,6 +105,31 @@ describe('selectionState', () => {
     expect(selectionState(doc, [comma]).bold).toBe('empty');
     expect(selectionState(doc, [{ paragraph: 'missing', start: 0, end: 2 }]).families.size).toBe(0);
     expect(canEmphasize(selectionState(doc, [comma]), 'bold')).toBe(false);
+  });
+});
+
+describe('toggleDecoration', () => {
+  it('adds and removes a mark on every letter', () => {
+    const doc = fromText('Hi');
+    const all = everything(doc);
+    const underlined = toggleDecoration(doc, all, 'underline');
+    expect(output(underlined)).toBe('H̲i̲');
+    expect(output(toggleDecoration(underlined, everything(underlined), 'underline'))).toBe('Hi');
+  });
+
+  it('survives a change of family, unlike an unsupported emphasis', () => {
+    /*
+     * `setFamily` strips emphasis a family cannot express, but a combining mark
+     * composes with every alphabet, so switching family must keep it. Silently
+     * dropping it here would be invisible until someone copied the post.
+     */
+    const doc = fromText('Hi');
+    const underlined = toggleDecoration(doc, everything(doc), 'underline');
+    const mono = setFamily(underlined, everything(underlined), 'monospace');
+    // Monospace H and i (U+1D677, U+1D692), each carrying a combining low line.
+    const mark = DECORATION_MARKS.underline;
+    expect(output(mono)).toBe(`\u{1D677}${mark}\u{1D692}${mark}`);
+    expect(normalize(output(mono))).toBe('Hi');
   });
 });
 

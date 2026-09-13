@@ -17,6 +17,7 @@
  */
 
 import { isStyledCodepoint } from './alphabets';
+import { isDecorationMark } from './decorations';
 import { boundaries } from './graphemes';
 
 export const STYLE_KINDS = [
@@ -28,6 +29,10 @@ export const STYLE_KINDS = [
   'fraktur',
   'doublestruck',
   'sans',
+  // Drawn with a combining mark rather than a substitute alphabet, so these
+  // compose with any family above (ADR 0010).
+  'underline',
+  'strikethrough',
 ] as const;
 export type StyleKind = (typeof STYLE_KINDS)[number];
 export type StyleSet = ReadonlySet<StyleKind>;
@@ -157,7 +162,18 @@ export function validate(doc: Document): ValidationIssue[] {
     }
     for (const ch of text) {
       const cp = ch.codePointAt(0);
-      if (cp !== undefined && isStyledCodepoint(cp)) {
+      if (cp === undefined) continue;
+      /*
+       * A decoration mark is output, not source: leaving one in span text would
+       * make it survive `normalize` and break round-trip, the same way a styled
+       * codepoint would.
+       */
+      if (isDecorationMark(ch)) {
+        const hex = cp.toString(16).toUpperCase();
+        report(path, `contains decoration mark U+${hex}; source text must be unstyled`);
+        break;
+      }
+      if (isStyledCodepoint(cp)) {
         const hex = cp.toString(16).toUpperCase();
         report(path, `contains styled codepoint U+${hex}; source text must be unstyled`);
         break;

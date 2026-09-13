@@ -7,6 +7,7 @@
  */
 
 import {
+  DECORATIONS,
   applyStyle,
   canonicalStyle,
   fromText,
@@ -23,7 +24,14 @@ import {
   sourceOffsetAt,
   toggleStyle,
 } from '../document';
-import type { Document, IdFactory, RenderResult, StyleSet, TextRange } from '../document';
+import type {
+  Decoration,
+  Document,
+  IdFactory,
+  RenderResult,
+  StyleSet,
+  TextRange,
+} from '../document';
 
 export const FAMILIES = [
   'serif',
@@ -38,6 +46,14 @@ export type Emphasis = 'bold' | 'italic';
 
 const FAMILY_KINDS = ['sans', 'script', 'fraktur', 'doublestruck', 'monospace'] as const;
 const EMPHASES: readonly Emphasis[] = ['bold', 'italic'];
+
+/*
+ * Underline and strikethrough are combining marks, not alphabets, so unlike
+ * emphasis there is no family that cannot express them: every `supports` gate
+ * in this file is about alphabets and none of it applies here (ADR 0010).
+ */
+export { DECORATIONS };
+export type { Decoration };
 
 /**
  * The family a style renders in, using the renderer's precedence (ADR 0002).
@@ -78,6 +94,8 @@ export interface SelectionState {
   readonly families: ReadonlySet<Family>;
   readonly bold: EmphasisState;
   readonly italic: EmphasisState;
+  readonly underline: EmphasisState;
+  readonly strikethrough: EmphasisState;
 }
 
 /** What the toolbar should show for a selection. Only letters and digits count. */
@@ -85,6 +103,8 @@ export function selectionState(doc: Document, ranges: readonly TextRange[]): Sel
   const families = new Set<Family>();
   let bold = true;
   let italic = true;
+  let underline = true;
+  let strikethrough = true;
   const paragraphs = new Map(paragraphsOf(doc).map((p) => [p.id, p]));
   for (const range of ranges) {
     const p = paragraphs.get(range.paragraph);
@@ -103,10 +123,26 @@ export function selectionState(doc: Document, ranges: readonly TextRange[]): Sel
       families.add(familyOf(style));
       bold &&= style.has('bold');
       italic &&= style.has('italic');
+      underline &&= style.has('underline');
+      strikethrough &&= style.has('strikethrough');
     }
   }
-  if (families.size === 0) return { families, bold: 'empty', italic: 'empty' };
-  return { families, bold: bold ? 'on' : 'off', italic: italic ? 'on' : 'off' };
+  if (families.size === 0) {
+    return {
+      families,
+      bold: 'empty',
+      italic: 'empty',
+      underline: 'empty',
+      strikethrough: 'empty',
+    };
+  }
+  return {
+    families,
+    bold: bold ? 'on' : 'off',
+    italic: italic ? 'on' : 'off',
+    underline: underline ? 'on' : 'off',
+    strikethrough: strikethrough ? 'on' : 'off',
+  };
 }
 
 /** Whether `emphasis` can be applied to every family in the selection. */
@@ -135,6 +171,22 @@ export function setFamily(
     }
     return family === 'serif' ? next : applyStyle(next, range, family, ids);
   }, doc);
+}
+
+/**
+ * Toggle underline or strikethrough.
+ *
+ * No `supports` check: a combining mark composes with every alphabet, so unlike
+ * emphasis there is nothing a family can refuse. The mark still only lands on
+ * ASCII letters and digits, which the renderer decides.
+ */
+export function toggleDecoration(
+  doc: Document,
+  ranges: readonly TextRange[],
+  decoration: Decoration,
+  ids: IdFactory = randomIds,
+): Document {
+  return toggleStyle(doc, ranges, decoration, ids);
 }
 
 /** Toggle bold or italic, or return `doc` unchanged if a family cannot express it. */

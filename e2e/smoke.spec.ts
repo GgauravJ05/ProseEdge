@@ -98,6 +98,39 @@ test('fonts disable the emphasis Unicode does not have', async ({ page }) => {
   await expect(post).toHaveValue(plain);
 });
 
+test('underline and strikethrough work on any font, and are called out', async ({ page }) => {
+  const post = page.getByLabel('Post');
+  const plain = await post.inputValue();
+  const underline = page.getByRole('button', { name: 'Underline' });
+  const strikethrough = page.getByRole('button', { name: 'Strikethrough' });
+  await select(post, 0, 'Unicode'.length);
+
+  await underline.click();
+  await expect(underline).toHaveAttribute('aria-pressed', 'true');
+  // The letters are unchanged; a combining mark is added after each one.
+  expect((await post.inputValue()).normalize('NFKC')).not.toBe(plain);
+  expect(await post.inputValue()).toContain('U̲');
+
+  /*
+   * A combining mark composes with every alphabet, so unlike bold and italic
+   * neither control is ever disabled — not even on monospace, which Unicode
+   * gives no bold or italic form (ADR 0010).
+   */
+  await page.getByRole('button', { name: 'Mono' }).click();
+  await expect(underline).toBeEnabled();
+  await expect(strikethrough).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Bold' })).toBeDisabled();
+  // The decoration survived the change of family.
+  expect(await post.inputValue()).toContain('̲');
+
+  // The checks panel warns about these separately: they are the riskiest style.
+  await expect(page.getByText(/underlined or struck letter/)).toBeVisible();
+
+  await underline.click();
+  await expect(underline).toHaveAttribute('aria-pressed', 'false');
+  expect(await post.inputValue()).not.toContain('̲');
+});
+
 test('keyboard shortcuts toggle bold and italic', async ({ page }) => {
   const post = page.getByLabel('Post');
   const plain = await post.inputValue();
