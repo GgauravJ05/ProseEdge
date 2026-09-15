@@ -64,7 +64,8 @@ uv run proseedge-data pairs --warmup 2006-10-01 --train 2007-01-01 \
 
 ## Result
 
-All leak checks passed.
+All leak checks passed. A second run with the same seed produced byte-identical
+pair files (the manifests, which carry each file's SHA-256, matched).
 
 | Split      |     Posts | Reposts excluded |     Pairs | First post wins |
 | :--------- | --------: | ---------------: | --------: | --------------: |
