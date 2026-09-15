@@ -47,6 +47,16 @@ skipped, so an interrupted run can simply be repeated.
 uv run proseedge-data hn 2024-01 2024-12
 ```
 
+Label pairs with the committed split boundaries ([ADR 0011](docs/adr/0011-split-boundaries-over-the-full-history.md)).
+Pairs go to `training/data/interim/`, which is ignored; commit the pair
+manifests written to `training/data/manifests/pairs/`. It takes about 90 seconds
+and 4 GB of memory over the full history.
+
+```sh
+uv run proseedge-data pairs --warmup 2006-10-01 --train 2007-01-01 \
+  --validation 2024-08-01 --test 2025-08-01 --end 2026-08-01 --seed 0
+```
+
 ## Workflow
 
 1. Branch from `main`: `feat/short-name`, `fix/short-name`.
