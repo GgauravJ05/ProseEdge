@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.1](https://github.com/GgauravJ05/ProseEdge/compare/v0.1.0...v0.1.1) (2026-09-22)
+
+
+### Features
+
+* **app:** add Tailwind and a modern dark palette with new fonts ([#37](https://github.com/GgauravJ05/ProseEdge/issues/37)) ([2a3722b](https://github.com/GgauravJ05/ProseEdge/commit/2a3722b3a83fb6bb167b7057e8cfa5f4ec2bed95))
+* **app:** give the editor more room and ask before restoring a draft ([#41](https://github.com/GgauravJ05/ProseEdge/issues/41)) ([3df80f1](https://github.com/GgauravJ05/ProseEdge/commit/3df80f19d16baaa52afd434ff190f84f7a70df07))
+
+
+### Bug Fixes
+
+* **app:** stop the before-paint theme check racing the inline script ([#31](https://github.com/GgauravJ05/ProseEdge/issues/31)) ([8db2383](https://github.com/GgauravJ05/ProseEdge/commit/8db23830a9db97a9faaa5f9f31958aabcdb476ab))
+* **app:** widen the page and fix a dead-CSS bug that capped it at 48rem ([#43](https://github.com/GgauravJ05/ProseEdge/issues/43)) ([1651483](https://github.com/GgauravJ05/ProseEdge/commit/1651483aba0e2f8462c480e163d8070c55d6ff3d))
+
 ## 0.1.0 (2026-09-13)
 
 
