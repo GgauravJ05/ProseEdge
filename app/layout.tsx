@@ -3,7 +3,7 @@
 
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
-import { Inter, Source_Serif_4 } from 'next/font/google';
+import { Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -15,11 +15,11 @@ import './globals.css';
 
 // Downloaded at build time and served from this domain: no third-party request
 // at runtime, which keeps the privacy claim on /privacy exactly true.
-const sans = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
-const serif = Source_Serif_4({
+const sans = Plus_Jakarta_Sans({ subsets: ['latin'], display: 'swap', variable: '--font-jakarta' });
+const display = Space_Grotesk({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-source-serif',
+  variable: '--font-space-grotesk',
 });
 
 const title = 'ProseEdge — Unicode text formatter for social posts';
@@ -51,7 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     // before paint from the remembered choice, and rendering it here would make
     // hydration restore the default and undo that on every reload.
     // `suppressHydrationWarning` tells React the difference is intended.
-    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${serif.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${display.variable}`}>
       <head>
         {/*
          * Applies the remembered theme before anything paints, so a reader who
