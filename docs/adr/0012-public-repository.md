@@ -17,11 +17,14 @@ kept by convention, and wants the source visible alongside the deployed app.
 ## Decision
 
 - The repository is public again.
-- `.github/rulesets/main.json` is (re-)applied to `main` once the repository
-  is public, since the Rulesets API refused all requests while it was private
-  (confirmed: `GET /rulesets` returns 403 "Upgrade to GitHub Pro or make this
-  repository public") — this is a one-time settings action, not a workflow
-  change, and unlike CI's `if` conditions it does not happen automatically.
+- No ruleset work was needed: the `main` ruleset created under 0001 was never
+  deleted, only unenforceable — `GET /rulesets` returned 403 the whole time
+  the repository was private (confirmed before flipping visibility), but
+  `GET /rulesets/{id}` immediately after flipping it back to public returned
+  the same ruleset, `enforcement: active`, matching
+  `.github/rulesets/main.json` exactly, and `GET /rules/branches/main`
+  confirmed GitHub was evaluating it. It re-enables itself the moment the
+  repository becomes public again; there is nothing to re-apply.
 - The `Dependency review` and CodeQL `analyze` jobs already gate on
   `!github.event.repository.private` (added by 0003), so both start running
   again on the next pull request with no workflow edit.
