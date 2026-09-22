@@ -148,14 +148,13 @@ card, and documentation. If time runs short, M5 and M6 are cut before M3 or M4.
 
 ## Risks
 
-| Risk                                                         | Mitigation                                                                                                                   |
-| :----------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| The formatter spreads styling that hurts screen-reader users | The notice is on by default, **Copy plain text** is one click away, and M3 replaces the notice with a measured prediction    |
-| Vercel deploys `main` whether or not CI passed               | Merges happen only on green CI; end-to-end tests cover the core flows; Instant Rollback takes seconds                        |
-| Vercel's Hobby plan is for non-commercial use only           | Fine for a portfolio project; moving to Pro is a billing change, not a code change                                           |
-| The free analytics tier has monthly event limits             | Page views only; if a limit is hit, analytics stop and the app keeps working                                                 |
-| Flags pile up                                                | Each flag is deleted in the PR after its feature ships                                                                       |
-| The repository is private while the app is public            | Allowed: the author is not bound by the AGPL network clause. The footer omits a source link until the repository goes public |
+| Risk                                                         | Mitigation                                                                                                                |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| The formatter spreads styling that hurts screen-reader users | The notice is on by default, **Copy plain text** is one click away, and M3 replaces the notice with a measured prediction |
+| Vercel deploys `main` whether or not CI passed               | Merges happen only on green CI; end-to-end tests cover the core flows; Instant Rollback takes seconds                     |
+| Vercel's Hobby plan is for non-commercial use only           | Fine for a portfolio project; moving to Pro is a billing change, not a code change                                        |
+| The free analytics tier has monthly event limits             | Page views only; if a limit is hit, analytics stop and the app keeps working                                              |
+| Flags pile up                                                | Each flag is deleted in the PR after its feature ships                                                                    |
 
 ## Deployment
 

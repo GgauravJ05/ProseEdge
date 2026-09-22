@@ -99,6 +99,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
             <nav className="footer-links" aria-label="About">
               <h2>About</h2>
               <Link href="/privacy">Privacy</Link>
+              <a href="https://github.com/GgauravJ05/ProseEdge" rel="noreferrer">
+                Source
+              </a>
               <a href="https://www.gnu.org/licenses/agpl-3.0.html" rel="license noreferrer">
                 AGPL-3.0
               </a>
