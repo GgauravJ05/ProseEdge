@@ -49,13 +49,21 @@
   }
 }
 
-/* Wide screens: let the two panes breathe rather than capping at reading width. */
-@media (min-width: 90rem) {
-  .editor,
-  .site-header,
-  .site-footer,
-  main {
-    max-width: 64rem;
+/*
+ * Wide screens: let the two panes breathe past the shared 64rem chrome width
+ * (globals.css) rather than capping the working surface at reading width.
+ *
+ * This used to list `.site-header, .site-footer, main` alongside `.editor`,
+ * all set to the same 64rem globals.css now uses as its unconditional base.
+ * Because `@import` inlines this file's rules before the rest of globals.css,
+ * that later, unconditional rule always won the specificity tie regardless of
+ * viewport width — so on every screen, however wide, the header, footer and
+ * every bare `<main>` silently fell back to the old 48rem, and this query did
+ * nothing for them. `.editor` still worked, because nothing else styles it.
+ */
+@media (min-width: 80rem) {
+  .editor {
+    max-width: 76rem;
   }
 }
 

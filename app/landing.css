@@ -60,7 +60,7 @@
 /* Landing layout ---------------------------------------------------------- */
 
 .landing {
-  max-width: 66rem;
+  max-width: 72rem;
   padding-block: 1.5rem 4rem;
 }
 
@@ -384,9 +384,14 @@
 
 /* Footer ------------------------------------------------------------------ */
 
-.site-footer {
-  max-width: 66rem;
-}
+/*
+ * No `.site-footer` width override here: this rule used to set 66rem, but
+ * globals.css's own `.site-header, .site-footer, main` rule is the same
+ * specificity (one class) and comes later in the cascade (this file is
+ * `@import`ed at the top of globals.css), so it always won regardless of
+ * this rule's value. The footer has always rendered at globals.css's width
+ * (48rem, now 64rem) on every page, landing included; this was dead CSS.
+ */
 
 .footer-top {
   display: grid;
