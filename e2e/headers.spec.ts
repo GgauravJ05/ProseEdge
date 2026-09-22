@@ -45,7 +45,7 @@ test('the page runs clean under the policy, with its fonts and styles applied', 
     heading: getComputedStyle(document.querySelector('h1') as Element).fontFamily,
     body: getComputedStyle(document.body).fontFamily,
   }));
-  expect(fonts.heading).toContain('Source Serif 4');
-  expect(fonts.body).toContain('Inter');
+  expect(fonts.heading).toContain('Space Grotesk');
+  expect(fonts.body).toContain('Plus Jakarta Sans');
   expect(blocked).toEqual([]);
 });

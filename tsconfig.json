@@ -39,6 +39,8 @@
     "playwright.config.ts",
     "vite.config.ts",
     "vitest.config.ts",
+    "tailwind.config.ts",
+    "postcss.config.mjs",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
