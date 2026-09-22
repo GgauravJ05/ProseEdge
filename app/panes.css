@@ -232,6 +232,14 @@
 
 .pane textarea {
   flex: 1;
+  /*
+   * `rows` alone (editor.tsx) sets the intrinsic height; this floor and
+   * ceiling keep a long post comfortable to edit without letting a single
+   * pane swallow the whole viewport on a short window. `resize: vertical`
+   * (globals.css) still lets a reader drag it taller within the ceiling.
+   */
+  min-height: 18rem;
+  max-height: 65vh;
 }
 
 .pane textarea[readonly] {
@@ -444,4 +452,50 @@
   .preview-actions {
     gap: 1.25rem;
   }
+}
+
+/* Restore-draft prompt ----------------------------------------------------- */
+
+.draft-prompt-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgb(0 0 0 / 45%);
+}
+
+.draft-prompt {
+  max-width: 26rem;
+  padding: 1.25rem 1.35rem 1.5rem;
+}
+
+.draft-prompt h2 {
+  font-size: 1.15rem;
+  margin-block: 0 0.5rem;
+}
+
+.draft-prompt p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.draft-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 1.1rem;
+}
+
+.draft-prompt-actions button:first-child {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.draft-prompt-actions button:first-child:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }

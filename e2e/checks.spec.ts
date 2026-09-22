@@ -49,18 +49,22 @@ test('shows which characters a font leaves plain', async ({ page }) => {
   await expect(checks.locator('mark')).toHaveCount(0);
 });
 
-test('keeps the draft across a reload, including an emptied post', async ({ page }) => {
+test('offers the draft across a reload, including an emptied post', async ({ page }) => {
   const post = page.getByLabel('Post');
   await select(post, 0, 'Unicode'.length);
   await page.getByRole('button', { name: 'Bold' }).click();
   const styled = await post.inputValue();
 
   await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Restore your last draft?' })).toBeVisible();
+  await expect(page.getByLabel('Post')).not.toHaveValue(styled);
+  await page.getByRole('button', { name: 'Restore draft' }).click();
   await expect(page.getByLabel('Post')).toHaveValue(styled);
 
   await page.getByRole('button', { name: 'Clear post' }).click();
   await expect(page.getByLabel('Post')).toHaveValue('');
   await page.reload();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByLabel('Post')).toHaveValue('');
 });
 
@@ -80,6 +84,7 @@ test('never sends what the user types over the network', async ({ page }) => {
   await page.getByRole('button', { name: 'Bold' }).click();
   await page.getByRole('button', { name: 'Copy plain text' }).click();
   await page.reload();
+  await page.getByRole('button', { name: 'Restore draft' }).click();
   await expect(page.getByLabel('Post')).not.toHaveValue('');
   expect(leaks).toEqual([]);
 });
