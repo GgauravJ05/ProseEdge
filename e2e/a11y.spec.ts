@@ -101,6 +101,21 @@ test('the post preview passes the scan, in both themes', async ({ page }) => {
   expect(await violations(page)).toEqual([]);
 });
 
+/*
+ * The restore-draft dialog only ever renders over a saved localStorage draft
+ * from a previous visit, so no other scan in this file reaches it: everything
+ * else starts from a clean context. The rest of the page is `inert` while it
+ * is open, so this also checks that inert content is not still reachable by
+ * axe's own traversal.
+ */
+test('the restore-draft dialog passes the scan', async ({ page }) => {
+  await page.goto('/format');
+  await page.getByLabel('Post').fill('A draft worth restoring.');
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Restore your last draft?' })).toBeVisible();
+  expect(await violations(page)).toEqual([]);
+});
+
 test.describe('dark mode', () => {
   test('passes the scan and shows pressed buttons as pressed', async ({ page }) => {
     await page.goto('/format');

@@ -117,7 +117,33 @@ const toSource = (value: string, start: number, end: number): Selection => ({
 export function Editor() {
   const id = useId();
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const [doc, setDoc] = useState<Document>(() => fromText(browserDrafts.load() ?? SAMPLE));
+  /*
+   * A non-empty saved draft is offered, not loaded silently: a reader who
+   * reloads to start over kept getting yesterday's post back with no way to
+   * tell it was about to happen. The prompt holds the saved text without
+   * touching `doc` until the reader picks Restore or Start fresh, so it never
+   * renders and is never overwritten by the autosave effect below while the
+   * choice is open. An explicitly emptied post (`''`, not `null`) is not a
+   * draft worth asking about — it loads back to empty exactly as before.
+   */
+  const [pendingDraft, setPendingDraft] = useState<string | null>(() => {
+    const saved = browserDrafts.load();
+    return saved !== null && saved !== '' ? saved : null;
+  });
+  const [doc, setDoc] = useState<Document>(() =>
+    fromText(browserDrafts.load() === '' ? '' : SAMPLE),
+  );
+  /*
+   * Whether anything has actually changed this session. Without this, the
+   * autosave effect below would write the untouched SAMPLE to storage on
+   * first mount, and the very next reload would offer to "restore" a draft
+   * the reader never wrote.
+   */
+  const edited = useRef(false);
+  const updateDoc = (next: Document) => {
+    edited.current = true;
+    setDoc(next);
+  };
   const [target, setTarget] = useState<PlatformId>('linkedin');
   /*
    * The right pane shows either the plain text or the feed preview.
@@ -148,8 +174,19 @@ export function Editor() {
   }, [result]);
 
   useEffect(() => {
+    if (pendingDraft !== null || !edited.current) return;
     browserDrafts.save(result.output);
-  }, [result]);
+  }, [result, pendingDraft]);
+
+  const restoreDraft = () => {
+    updateDoc(fromText(pendingDraft ?? ''));
+    setPendingDraft(null);
+  };
+
+  const discardDraft = () => {
+    browserDrafts.save('');
+    setPendingDraft(null);
+  };
 
   const readSelection = useCallback((): Selection | null => {
     const el = textarea.current;
@@ -222,7 +259,7 @@ export function Editor() {
     if (next === doc) return;
     pending.current = current;
     setSelection(current);
-    setDoc(next);
+    updateDoc(next);
   };
 
   /** Replace the post with edited text, keeping `selected` (source offsets) selected. */
@@ -230,7 +267,7 @@ export function Editor() {
     const next = applyEdit(doc, result, text);
     if (next === doc) return;
     pending.current = selected;
-    setDoc(next);
+    updateDoc(next);
   };
 
   const emphasize = (emphasis: Emphasis) => {
@@ -282,7 +319,33 @@ export function Editor() {
 
   return (
     <section className="editor">
-      <div className="card editor-card">
+      {pendingDraft !== null && (
+        <div className="draft-prompt-scrim">
+          <div
+            className="card draft-prompt"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${id}-draft-title`}
+            aria-describedby={`${id}-draft-body`}
+          >
+            <h2 id={`${id}-draft-title`}>Restore your last draft?</h2>
+            <p id={`${id}-draft-body`}>
+              A post was saved in this browser from before the page reloaded.
+            </p>
+            <div className="draft-prompt-actions">
+              <button type="button" autoFocus onClick={restoreDraft}>
+                <RestoreIcon />
+                Restore draft
+              </button>
+              <button type="button" onClick={discardDraft}>
+                <ClearIcon />
+                Start fresh
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="card editor-card" inert={pendingDraft !== null}>
         <div className="targets" role="group" aria-label="Target">
           <p className="targets-label">Writing for</p>
           {PLATFORM_LIST.map((option) => (
@@ -429,7 +492,7 @@ export function Editor() {
             <button
               type="button"
               onClick={() => {
-                setDoc(clearStyles(doc));
+                updateDoc(clearStyles(doc));
                 setStatus('All styling removed.');
               }}
             >
@@ -439,7 +502,7 @@ export function Editor() {
             <button
               type="button"
               onClick={() => {
-                setDoc(fromText(''));
+                updateDoc(fromText(''));
                 setStatus('Post cleared.');
                 textarea.current?.focus();
               }}
@@ -459,7 +522,7 @@ export function Editor() {
             <textarea
               id={`${id}-post`}
               ref={textarea}
-              rows={12}
+              rows={22}
               spellCheck
               aria-describedby={`${id}-hint`}
               value={result.output}
@@ -506,7 +569,7 @@ export function Editor() {
               </div>
             </div>
             {view === 'plain' ? (
-              <textarea id={`${id}-plain`} rows={12} readOnly tabIndex={-1} value={plain} />
+              <textarea id={`${id}-plain`} rows={22} readOnly tabIndex={-1} value={plain} />
             ) : (
               <PostPreview text={result.output} platform={platform} measureFor={measureFor} />
             )}
@@ -570,7 +633,11 @@ export function Editor() {
        * from the plain source, so picking one specimen after another never
        * compounds the styling.
        */}
-      <section aria-labelledby={`${id}-styles`} className="card checks">
+      <section
+        aria-labelledby={`${id}-styles`}
+        className="card checks"
+        inert={pendingDraft !== null}
+      >
         <h2 id={`${id}-styles`}>Every style</h2>
         <p className="hint">
           The whole post in one alphabet, without selecting anything. The plain text is untouched.
@@ -583,7 +650,11 @@ export function Editor() {
         />
       </section>
 
-      <section aria-labelledby={`${id}-checks`} className="card checks">
+      <section
+        aria-labelledby={`${id}-checks`}
+        className="card checks"
+        inert={pendingDraft !== null}
+      >
         <h2 id={`${id}-checks`}>Checks</h2>
         <ul className="stats">
           <li>{count(stats.characters, 'character', 'characters')}</li>
