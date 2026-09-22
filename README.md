@@ -28,6 +28,21 @@ text as the source of truth, so styling is always reversible, and it reports
 exactly which characters could not be styled rather than silently substituting
 lookalikes.
 
+## Screenshots
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/app-landing-dark.png">
+  <img alt="The ProseEdge landing page: a headline reading 'Unicode bold is not rich text', a specimen card showing the same words in every style, and a Format now call to action." src="docs/screenshots/app-landing-light.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/app-format-dark.png">
+  <img alt="The formatter: a toolbar of style, emphasis, list and case controls above two side-by-side panes, the styled post on the left with a bold phrase selected and the plain text a screen reader hears on the right, identical but for the styling." src="docs/screenshots/app-format-light.png">
+</picture>
+
+Light and dark follow an explicit in-app toggle, not the operating system's
+setting, and the choice is remembered in the browser.
+
 ## Architecture
 
 <picture>
