@@ -35,13 +35,13 @@ export function Logo({ size = 28, title }: LogoProps) {
       {/* The P, in paper: stem, bowl, and the counter knocked out by fill-rule. */}
       <path
         d="M9 7.5h6.4a5 5 0 0 1 0 10H12.2v7H9zM12.2 10.6v3.8h3.2a1.9 1.9 0 0 0 0-3.8z"
-        fill="var(--paper, #fbf7f0)"
+        fill="var(--paper, #f5f5f2)"
         fillRule="evenodd"
       />
       {/* The edge. */}
       <path
         d="M23 7.5v17"
-        stroke="var(--accent, #a14b08)"
+        stroke="var(--accent, #b83a0a)"
         strokeWidth="2.6"
         strokeLinecap="round"
       />
