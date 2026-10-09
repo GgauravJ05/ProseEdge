@@ -125,7 +125,7 @@ export default function Home() {
       <Reveal className="closing">
         <section aria-labelledby="closing-title">
           <h2 id="closing-title">
-            Write the post. Keep the <LiveWord word="words" interval={2600} />.
+            Write the post. Keep the <LiveWord word="words" interval={1200} />.
           </h2>
           <p className="lede">
             Free, open source under the AGPL, and it runs entirely on your device.

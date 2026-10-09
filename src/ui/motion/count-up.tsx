@@ -42,7 +42,7 @@ export function CountUp({ value, className }: Readonly<{ value: number; classNam
       started.current = true;
       current.set(0);
     }
-    const controls = animate(current, value, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
+    const controls = animate(current, value, { duration: 0.6, ease: [0.16, 1, 0.3, 1] });
     return () => {
       controls.stop();
     };
