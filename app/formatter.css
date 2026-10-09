@@ -1,0 +1,585 @@
+/*
+ * The formatter's workspace, shaped by Apple's design principles:
+ *
+ * - Keep focused, stay out of the way: a short header, then the editor. The
+ *   post is the content; every control defers to it.
+ * - Establish hierarchy: one command bar in the order a post is shaped, one
+ *   surface for the two panes, one filled primary action (Copy styled).
+ * - Familiar, consistent: B / I / U / S and list glyphs everyone knows, font
+ *   buttons drawn in their own alphabet, the same segmented control the
+ *   landing page uses for every either/or choice.
+ * - Clear feedback: a pressed style is filled, the meter moves, a copy says
+ *   so on the button that did it.
+ * - Recover from mistakes: Clear post and Restore accessible text can be
+ *   undone (editor.tsx).
+ * - Responsibility: "saved in this browser, never sent" sits beside the
+ *   controls, not only on the privacy page.
+ *
+ * Corners are concentric: an inner radius is its container's radius minus the
+ * padding between them. Every rule is scoped to `.workspace` or
+ * `.format-page`, so nothing here reaches another page.
+ */
+
+.format-page {
+  max-width: 76rem;
+  padding-block: 1.25rem 4rem;
+}
+
+.format-head h1 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+  letter-spacing: -0.035em;
+}
+
+.format-head .lede {
+  margin: 0 0 1.5rem;
+  font-size: 1.02rem;
+}
+
+/* Layout: the editor, with checks beside it on a wide screen --------------- */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  max-width: none;
+}
+
+@media (min-width: 80rem) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    align-items: start;
+  }
+
+  /* The checks follow the post as it scrolls, below the floating header. */
+  .workspace-rail {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+
+.workspace-main {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.workspace .card {
+  border-radius: 1.25rem;
+}
+
+.workspace .editor-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Command bar --------------------------------------------------------------- */
+
+.workspace .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-sunken) 55%, var(--surface));
+}
+
+.workspace .group {
+  gap: 0.15rem;
+  padding: 0.2rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+/* 0.75rem group corner − 0.2rem inset. */
+.workspace .group button {
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.55rem;
+  border-color: transparent;
+  border-radius: 0.55rem;
+}
+
+.workspace .group button:hover:not(:disabled) {
+  background-color: var(--surface-sunken);
+}
+
+/*
+ * Pressed wins over hover, explicitly. The hover rule above ties the global
+ * pressed rule on specificity and, loading later, would win it: a pressed
+ * button under the pointer then showed paper-coloured ink on a light fill,
+ * which is invisible. Longhands, so the minifier cannot empty the fill.
+ */
+.workspace .group button[aria-pressed='true'],
+.workspace .group button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.font-face {
+  font-size: 1rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.font-serif {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* The two actions that discard work sit apart, quieter, at the far end. */
+.workspace .group-reset {
+  margin-left: auto;
+  border-color: transparent;
+  background: transparent;
+}
+
+.workspace .group-reset button {
+  color: var(--muted);
+}
+
+.workspace .group-reset .danger:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+/* Panes: one surface, divided ---------------------------------------------- */
+
+.workspace .panes {
+  gap: 0;
+}
+
+.workspace .pane {
+  padding: 0.9rem 1.1rem 1rem;
+}
+
+.workspace .pane-side {
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-sunken) 60%, var(--surface));
+}
+
+@media (min-width: 56rem) {
+  .workspace .pane-side {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+}
+
+.workspace .pane-head {
+  margin: 0 0 0.5rem;
+}
+
+.workspace .pane-head label,
+.workspace .pane-head .pane-title {
+  min-width: 0;
+  font-weight: 600;
+}
+
+/* The view switch keeps its two options on one line; the label gives way. */
+.workspace .pane-head .segmented {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+/*
+ * The text areas grow with the post (where the browser can size a field to
+ * its content) between a comfortable floor and a ceiling, and draw no box of
+ * their own: the pane is the box. Focus is shown on the pane instead.
+ */
+.workspace .pane textarea {
+  field-sizing: content;
+  min-height: 16rem;
+  max-height: 60vh;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+  font-size: 1.06rem;
+  line-height: 1.65;
+  resize: none;
+}
+
+.workspace .pane textarea:focus,
+.workspace .pane textarea:focus-visible {
+  outline: none;
+}
+
+.workspace .pane:focus-within {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.workspace .pane textarea[readonly] {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* Segmented controls inside the workspace show the sliding pill, not a fill. */
+.workspace .segmented button[aria-pressed='true'],
+.workspace .segmented button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--ink);
+  border-color: transparent;
+}
+
+.workspace .segmented {
+  padding: 0.2rem;
+  border-radius: 0.75rem;
+}
+
+.workspace .segmented button {
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.55rem;
+  font-size: 0.85rem;
+}
+
+.workspace .segmented-pill {
+  border-radius: 0.55rem;
+}
+
+/* Status bar ---------------------------------------------------------------- */
+
+.workspace .statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 0.8rem 1.1rem;
+  border-top: 1px solid var(--line);
+}
+
+.statusbar-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.workspace .targets-label {
+  color: var(--muted);
+}
+
+.workspace .targets {
+  border-bottom: 0;
+}
+
+.workspace .budget {
+  flex: 1 1 14rem;
+  margin: 0;
+}
+
+.budget-count {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.workspace .budget.over .budget-count {
+  color: var(--danger);
+}
+
+.workspace .meter {
+  height: 0.4rem;
+  border: 0;
+}
+
+.workspace .meter-fill {
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace .meter-fill {
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.workspace .actions {
+  flex-wrap: nowrap;
+  margin: 0;
+}
+
+.workspace .actions button,
+.workspace .actions button:first-child {
+  padding: 0.55rem 0.95rem;
+  border-color: var(--line-strong);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.workspace .actions button:first-child:hover,
+.workspace .actions button:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  border-color: var(--ink);
+}
+
+/* The one primary action on the page. */
+.workspace .actions .primary,
+.workspace .actions .primary:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 10px 22px -14px var(--accent);
+}
+
+.workspace .actions .primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/*
+ * The foot: what the target means and where the draft lives on the left, and
+ * the final step — copying — on the right, where a confirming action sits.
+ */
+.editor-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem 1.5rem;
+  align-items: end;
+  padding: 0 1.1rem 0.9rem;
+}
+
+@media (min-width: 48rem) {
+  .editor-foot {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'hint actions'
+      'saved actions';
+  }
+
+  .editor-foot .hint {
+    grid-area: hint;
+  }
+
+  .editor-foot .saved {
+    grid-area: saved;
+  }
+
+  .editor-foot .actions {
+    grid-area: actions;
+  }
+}
+
+.workspace .editor-foot .hint {
+  margin: 0;
+  max-width: 38rem;
+}
+
+.saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.saved .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1.1rem;
+}
+
+.workspace .status-row .status {
+  margin: 0 0 0.9rem;
+}
+
+.workspace .undo {
+  margin-bottom: 0.9rem;
+  padding: 0.25rem 0.75rem;
+  border-color: var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Every style --------------------------------------------------------------- */
+
+.workspace .styles-card {
+  padding: 1.25rem;
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.workspace .card-head .hint {
+  margin: 0;
+}
+
+.workspace .style-list {
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.6rem;
+}
+
+/* 1.25rem card corner − 1.25rem padding would be square; 0.9rem reads as a tile. */
+.workspace .style-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'label button'
+    'sample sample';
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  padding: 0.8rem 0.9rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--surface);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace .style-row {
+    transition:
+      border-color 160ms ease,
+      transform 160ms ease;
+  }
+}
+
+@media (hover: hover) {
+  .workspace .style-row:hover {
+    border-color: var(--line-strong);
+    background: var(--surface);
+    transform: translateY(-1px);
+  }
+}
+
+.workspace .style-label {
+  grid-area: label;
+  width: auto;
+  color: var(--muted);
+}
+
+.workspace .style-sample {
+  grid-area: sample;
+  font-size: 1.12rem;
+}
+
+.workspace .style-row button {
+  grid-area: button;
+  padding: 0.25rem 0.6rem;
+  border-color: var(--line);
+  border-radius: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.workspace .style-row button.is-copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Checks -------------------------------------------------------------------- */
+
+.workspace .checks {
+  margin: 0;
+  padding: 1.25rem;
+}
+
+.workspace .checks h2 {
+  margin: 0 0 0.9rem;
+  font-size: 1.15rem;
+}
+
+.workspace .stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.workspace .stats li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface-sunken);
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.workspace .stats strong {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.workspace .check {
+  margin: 0 0 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.75rem;
+  background: var(--surface-sunken);
+  font-size: 0.9rem;
+}
+
+/* A soft fill carries the warning; no side-tab border. */
+.workspace .notice {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 0.75rem;
+  background: var(--accent-soft);
+}
+
+/* Fit -------------------------------------------------------------------- */
+
+/* Tighter command bar, so the whole bar fits one row on a laptop. */
+.workspace .toolbar {
+  gap: 0.4rem;
+}
+
+.workspace .group button {
+  padding-inline: 0.45rem;
+}
+
+.workspace .actions button {
+  white-space: nowrap;
+}
+
+/*
+ * Below the two-column layout the checks belong right after the post they
+ * describe, not under fourteen style cards. The main column dissolves into
+ * the workspace grid so the three cards can be ordered as one list.
+ */
+@media (max-width: 79.99rem) {
+  .workspace-main {
+    display: contents;
+  }
+
+  .workspace .styles-card {
+    order: 2;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .workspace .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .workspace .actions button {
+    justify-content: center;
+  }
+}

@@ -5,15 +5,7 @@ import type { Metadata } from 'next';
 
 import { ClientEditor } from '../../src/ui/client-editor';
 
-/** The same word in each alphabet the formatter can write. */
-const SPECIMENS = [
-  { label: 'Bold', sample: '𝗕𝗼𝗹𝗱' },
-  { label: 'Italic', sample: '𝘐𝘵𝘢𝘭𝘪𝘤' },
-  { label: 'Script', sample: '𝒮𝒸𝓇𝒾𝓅𝓉' },
-  { label: 'Fraktur', sample: '𝔉𝔯𝔞𝔨𝔱𝔲𝔯' },
-  { label: 'Double', sample: '𝔻𝕠𝕦𝕓𝕝𝕖' },
-  { label: 'Mono', sample: '𝙼𝚘𝚗𝚘' },
-];
+import '../formatter.css';
 
 export const metadata: Metadata = {
   title: 'Formatter',
@@ -24,25 +16,13 @@ export const metadata: Metadata = {
 
 export default function Format() {
   return (
-    <main>
-      <p className="eyebrow">Local-first · v0.1</p>
-      <h1>
-        Style a post <span className="underline-accent">without losing</span> the plain text
-      </h1>
-      <p className="lede">
-        Bold, italic, script, fraktur, double-struck and monospace letters for LinkedIn, X,
-        Instagram and Threads, built from Unicode symbols. ProseEdge shows the plain version beside
-        the styled one, counts both against the limit you are writing for, and never sends what you
-        type anywhere.
-      </p>
-      <ul className="specimens" aria-label="The alphabets this formatter writes">
-        {SPECIMENS.map(({ label, sample }) => (
-          <li key={label}>
-            <span className="specimen-sample">{sample}</span>
-            <span className="specimen-label">{label}</span>
-          </li>
-        ))}
-      </ul>
+    <main className="format-page">
+      <header className="format-head">
+        <h1>Style a post without losing the plain text</h1>
+        <p className="lede">
+          Select words, pick a style, copy. What a screen reader hears stays beside it.
+        </p>
+      </header>
       <ClientEditor />
     </main>
   );

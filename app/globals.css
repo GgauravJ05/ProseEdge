@@ -636,3 +636,14 @@ mark {
   white-space: nowrap;
   border: 0;
 }
+
+/*
+ * On a wide screen the header and footer line up with the widest page body
+ * (the formatter's workspace), instead of sitting inset from it.
+ */
+@media (min-width: 80rem) {
+  .site-header,
+  .site-footer {
+    max-width: 76rem;
+  }
+}
