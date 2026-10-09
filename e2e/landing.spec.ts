@@ -61,3 +61,23 @@ test('the meters recount when the post goes plain', async ({ page }) => {
     .click();
   await expect(linkedin).toContainText('Styling is free here');
 });
+
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test.describe(`with reducedMotion: ${reducedMotion}`, () => {
+    test.use({ reducedMotion });
+
+    // A hydration mismatch is a page error, and React answers it by discarding
+    // the prerendered page and rebuilding it — elements detach mid-test.
+    test('the landing page hydrates without errors', async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+      await page.goto('/');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await page.waitForLoadState('networkidle');
+      expect(errors).toEqual([]);
+    });
+  });
+}

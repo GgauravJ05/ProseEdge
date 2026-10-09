@@ -33,6 +33,13 @@ export function Typewriter({
   const reduced = useReducedMotion();
   const [progress, setProgress] = useState(0);
   const [run, setRun] = useState(0);
+  /*
+   * Set only once a run has typed to the end. Rendering the Replay button from
+   * the motion preference instead would differ between the prerender (which
+   * cannot know it) and the first client render, and that hydration mismatch
+   * makes React throw the whole page away and rebuild it.
+   */
+  const [played, setPlayed] = useState(false);
   // Until it is in view (and always under reduced motion) the whole text shows.
   const animating = inView && reduced !== true;
 
@@ -42,6 +49,7 @@ export function Typewriter({
       setProgress((n) => {
         if (n >= text.length) {
           window.clearInterval(timer);
+          setPlayed(true);
           return n;
         }
         return n + 1;
@@ -63,7 +71,7 @@ export function Typewriter({
         <span className={typing ? 'caret typing' : 'caret'} />
       </span>
       <span className="visually-hidden">{text}</span>
-      {replay && !typing && !reduced && (
+      {replay && played && !typing && (
         <button
           type="button"
           className="replay"
