@@ -195,12 +195,25 @@ main {
   margin-inline: auto;
 }
 
+/*
+ * A floating pill that stays with the reader. Translucent over the page, so
+ * content passes softly behind it rather than being cut off by a hard bar.
+ */
 .site-header {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 40;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding-block: 1.25rem;
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.45rem 0.45rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: var(--shadow);
 }
 
 /*
@@ -602,4 +615,18 @@ mark {
   .sheen:hover::before {
     opacity: 1;
   }
+}
+
+/* Utilities ----------------------------------------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
