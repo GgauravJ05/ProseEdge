@@ -72,6 +72,15 @@ test.describe('touch devices', () => {
     test(`controls on ${path} are at least 44 × 44 px`, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // The editor renders on the client: measure it, not the page before it exists.
+      if (path === '/format')
+        await expect(page.getByRole('button', { name: 'Bold' })).toBeVisible();
+
+      const measured = await page.evaluate(
+        () => document.querySelectorAll('button, [role="slider"], a[href], input').length,
+      );
+      // A floor, so the test cannot pass by finding nothing to measure.
+      expect(measured).toBeGreaterThan(path === '/format' ? 40 : 15);
 
       const small = await page.evaluate(() => {
         const targets = [
