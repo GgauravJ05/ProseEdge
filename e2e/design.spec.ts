@@ -12,7 +12,7 @@ test('the three type families are loaded and applied', async ({ page }) => {
       .evaluate((el) => getComputedStyle(el).fontFamily);
   expect(await family('h1')).toContain('Space Grotesk');
   expect(await family('body')).toContain('Plus Jakarta Sans');
-  expect(await family('.eyebrow')).toContain('JetBrains Mono');
+  expect(await family('.stat-label')).toContain('JetBrains Mono');
 });
 
 test('the grain layer is painted but never catches the pointer', async ({ page }) => {
@@ -36,9 +36,9 @@ test.describe('with motion allowed', () => {
     await page.goto('/');
     // The hero is in view on load, so it reveals without scrolling.
     await expect(page.locator('.hero-copy')).toHaveCSS('opacity', '1');
-    const compare = page.locator('.compare-card').first();
-    await compare.scrollIntoViewIfNeeded();
-    await expect(compare).toBeVisible();
+    const tile = page.locator('.tile').first();
+    await tile.scrollIntoViewIfNeeded();
+    await expect(tile).toHaveCSS('opacity', '1');
   });
 
   test('the primary button leans toward a mouse and returns when it leaves', async ({ page }) => {
