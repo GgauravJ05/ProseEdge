@@ -583,3 +583,16 @@
     justify-content: center;
   }
 }
+
+/*
+ * Touch: the workspace's compact 36px controls are a pointer size. On a touch
+ * screen every one returns to the HIG's 44 × 44 pt, which the rules above
+ * would otherwise override (they outrank the global touch rule in panes.css).
+ */
+@media (pointer: coarse) {
+  .workspace .group button,
+  .workspace .segmented button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
