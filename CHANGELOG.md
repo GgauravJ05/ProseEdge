@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.1](https://github.com/GgauravJ05/ProseEdge/compare/v0.1.0...v0.1.1) (2026-10-09)
+
+
+### Features
+
+* **app:** add Tailwind and a modern dark palette with new fonts ([#37](https://github.com/GgauravJ05/ProseEdge/issues/37)) ([2a3722b](https://github.com/GgauravJ05/ProseEdge/commit/2a3722b3a83fb6bb167b7057e8cfa5f4ec2bed95))
+* **app:** give the editor more room and ask before restoring a draft ([#41](https://github.com/GgauravJ05/ProseEdge/issues/41)) ([3df80f1](https://github.com/GgauravJ05/ProseEdge/commit/3df80f19d16baaa52afd434ff190f84f7a70df07))
+* **app:** live landing page built on the formatter's own code ([#50](https://github.com/GgauravJ05/ProseEdge/issues/50)) ([f567f57](https://github.com/GgauravJ05/ProseEdge/commit/f567f57aff3472bfe586569fb186b6142b70befc))
+* **app:** redesign the formatter around Apple's design principles ([#52](https://github.com/GgauravJ05/ProseEdge/issues/52)) ([2dc5129](https://github.com/GgauravJ05/ProseEdge/commit/2dc51296839ca86fd7dab6cf2724e89510d5b90c))
+* **app:** visual design v2 tokens, type and motion primitives ([#48](https://github.com/GgauravJ05/ProseEdge/issues/48)) ([607ffb2](https://github.com/GgauravJ05/ProseEdge/commit/607ffb21ab38cbb1fe553ef68d659284c1ca92ea))
+
+
+### Bug Fixes
+
+* **app:** meet Apple HIG touch targets, margins and finite motion ([#51](https://github.com/GgauravJ05/ProseEdge/issues/51)) ([b8f6f92](https://github.com/GgauravJ05/ProseEdge/commit/b8f6f921cfafc12c2ba68a3b504bdcb91efee611))
+* **app:** restore 44 pt touch targets in the formatter toolbar ([#53](https://github.com/GgauravJ05/ProseEdge/issues/53)) ([d93adad](https://github.com/GgauravJ05/ProseEdge/commit/d93adadd0a266d90f2706f9287bd363e65e68940))
+* **app:** stop the before-paint theme check racing the inline script ([#31](https://github.com/GgauravJ05/ProseEdge/issues/31)) ([8db2383](https://github.com/GgauravJ05/ProseEdge/commit/8db23830a9db97a9faaa5f9f31958aabcdb476ab))
+* **app:** widen the page and fix a dead-CSS bug that capped it at 48rem ([#43](https://github.com/GgauravJ05/ProseEdge/issues/43)) ([1651483](https://github.com/GgauravJ05/ProseEdge/commit/1651483aba0e2f8462c480e163d8070c55d6ff3d))
+
 ## 0.1.0 (2026-09-13)
 
 
