@@ -30,6 +30,35 @@ test('the grain layer is painted but never catches the pointer', async ({ page }
 test.describe('with motion allowed', () => {
   test.use({ reducedMotion: 'no-preference' });
 
+  // WCAG 2.2.2 and the HIG's "motion explains, never decorates": nothing loops for ever.
+  test('no animation on the landing page runs indefinitely', async ({ page }) => {
+    await page.goto('/');
+    for (const y of [0, 900, 1800, 2700, 3600, 4500]) {
+      await page.evaluate((top) => {
+        window.scrollTo(0, top);
+      }, y);
+      await page.waitForTimeout(150);
+    }
+    const endless = await page.evaluate(() =>
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations === Infinity)
+        .map((animation) => (animation as CSSAnimation).animationName),
+    );
+    expect(endless).toEqual([]);
+  });
+
+  test('the headline word settles back on its first style', async ({ page }) => {
+    await page.goto('/');
+    const glyphs = page.locator('h1 .live-word-glyphs');
+    await expect(glyphs).toHaveText('𝗯𝗼𝗹𝗱');
+    // One round is four changes at 1.1 s: under the five seconds WCAG allows.
+    await expect(glyphs).not.toHaveText('𝗯𝗼𝗹𝗱', { timeout: 3000 });
+    await expect(glyphs).toHaveText('𝗯𝗼𝗹𝗱', { timeout: 6000 });
+    await page.waitForTimeout(1500);
+    await expect(glyphs).toHaveText('𝗯𝗼𝗹𝗱');
+  });
+
   test('the hero reveals on load and content below the fold is there once scrolled to', async ({
     page,
   }) => {

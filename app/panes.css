@@ -19,16 +19,39 @@
  * control is under 44px there.
  */
 @media (pointer: coarse) {
+  /* Apple HIG: 44 × 44 pt is the default target on iOS — in both directions. */
   button {
     min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
     padding-inline: 0.85rem;
+  }
+
+  /*
+   * Links that stand alone (nav, footer, the hero's secondary link) get the
+   * same 44px height. Links inside running prose keep the line's height: a
+   * 44px box there would push lines apart without making the text easier
+   * to tap.
+   */
+  .brand,
+  .site-nav a,
+  .footer-links a,
+  .cta-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .footer-links {
+    gap: 0;
   }
 }
 
 /* Small phones: reclaim the gutters and tighten the hero. */
 @media (max-width: 26rem) {
+  /* Apple HIG: 16 pt leading and trailing margins in compact width. */
   body {
-    padding-inline: 0.875rem;
+    padding-inline: 1rem;
   }
 
   .editor-card {

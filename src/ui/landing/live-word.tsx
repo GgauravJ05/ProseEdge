@@ -10,25 +10,40 @@ import { inStyle } from '../specimens';
 import { SHOWCASE } from './samples';
 
 /**
- * A word that keeps changing alphabet: the headline demonstrating its own
- * claim. Readers of the heading get the plain word; the styled one is
- * decoration and hidden from assistive technology, which is exactly the point
- * the page is making.
+ * A word that changes alphabet: the headline demonstrating its own claim.
+ * Readers of the heading get the plain word; the styled one is decoration and
+ * hidden from assistive technology, which is exactly the point the page makes.
+ *
+ * It plays one short round and settles back on the first style, so the page
+ * comes to rest: WCAG 2.2.2 asks that motion which starts on its own either
+ * stop within five seconds or offer a way to pause it. Pointing at the word
+ * plays the round again.
  */
-export function LiveWord({ word, interval = 2200 }: Readonly<{ word: string; interval?: number }>) {
+export function LiveWord({
+  word,
+  interval = 1100,
+  steps = 4,
+}: Readonly<{ word: string; interval?: number; steps?: number }>) {
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [round, setRound] = useState(0);
 
   useEffect(() => {
-    if (reduced || paused) return;
+    if (reduced) return;
+    let changes = 0;
     const timer = window.setInterval(() => {
-      setIndex((n) => (n + 1) % SHOWCASE.length);
+      changes += 1;
+      if (changes >= steps) {
+        window.clearInterval(timer);
+        setIndex(0);
+      } else {
+        setIndex(changes % SHOWCASE.length);
+      }
     }, interval);
     return () => {
       window.clearInterval(timer);
     };
-  }, [interval, paused, reduced]);
+  }, [interval, reduced, round, steps]);
 
   const spec = SHOWCASE[index] ?? SHOWCASE[0];
   const styled = spec ? inStyle(word, spec) : word;
@@ -36,11 +51,8 @@ export function LiveWord({ word, interval = 2200 }: Readonly<{ word: string; int
   return (
     <span
       className="live-word"
-      onPointerEnter={() => {
-        setPaused(true);
-      }}
-      onPointerLeave={() => {
-        setPaused(false);
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') setRound((n) => n + 1);
       }}
     >
       <span className="visually-hidden">{word}</span>

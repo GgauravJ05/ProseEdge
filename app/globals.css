@@ -168,7 +168,13 @@ a:hover {
     transition:
       background-color 120ms ease,
       border-color 120ms ease,
-      color 120ms ease;
+      color 120ms ease,
+      transform 120ms ease;
+  }
+
+  /* A press is acknowledged at once (within 100 ms, per the HIG), not only on release. */
+  button:active:not(:disabled) {
+    transform: scale(0.97);
   }
 }
 

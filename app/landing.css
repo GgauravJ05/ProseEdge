@@ -236,14 +236,27 @@
   color: var(--accent);
 }
 
+/*
+ * The handle is a 44px-wide target (the HIG default) that draws only a 2px
+ * line, so it is easy to grab without covering the text it divides.
+ */
 .ba-handle {
   position: absolute;
   top: 0;
   bottom: 0;
+  width: 44px;
+  margin-left: -22px;
+  outline-offset: -4px;
+}
+
+.ba-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 21px;
   width: 2px;
-  margin-left: -1px;
   background: var(--accent);
-  outline-offset: 4px;
 }
 
 .ba-grip {
@@ -252,8 +265,8 @@
   left: 50%;
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   transform: translate(-50%, -50%);
   border-radius: 999px;
   background: var(--accent);
@@ -323,7 +336,7 @@
   background: transparent;
   color: var(--muted);
   padding: 0.45rem 0.8rem;
-  border-radius: 0.65rem;
+  border-radius: 0.6rem;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -345,7 +358,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 0.65rem;
+  /* Concentric with the group: its 0.9rem corner minus the 0.3rem inset. */
+  border-radius: 0.6rem;
   background: var(--surface);
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow);
@@ -549,21 +563,9 @@
   opacity: 0;
 }
 
+/* Shown while typing and gone after: nothing on the page moves for ever. */
 .caret.typing {
   opacity: 1;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .caret {
-    animation: blink 1s steps(1) infinite;
-    opacity: 1;
-  }
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
 }
 
 .replay {
@@ -678,7 +680,8 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .unreached {
-    animation: ping 2.2s ease-out infinite;
+    /* Three pulses to draw the eye, then still (WCAG 2.2.2: no endless motion). */
+    animation: ping 2.2s ease-out 3;
   }
 }
 
@@ -740,7 +743,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .local-path .wire-on {
-    animation: flow 1.2s linear infinite;
+    animation: flow 1.2s linear 4;
   }
 }
 
