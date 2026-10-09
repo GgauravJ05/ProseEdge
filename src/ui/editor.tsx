@@ -47,10 +47,10 @@ import {
   CopyIcon,
   FoldIcon,
   ItalicIcon,
+  LockIcon,
   LowercaseIcon,
   NumberedListIcon,
   PlainTextIcon,
-  PreviewIcon,
   ReadingIcon,
   RestoreIcon,
   StrikethroughIcon,
@@ -60,7 +60,9 @@ import {
   WarningIcon,
 } from './icons';
 import { toggleList } from './lists';
+import { Segmented } from './motion/segmented';
 import { PostPreview } from './post-preview';
+import { inStyle, SPECIMENS } from './specimens';
 import { StylePanel } from './style-panel';
 
 const SAMPLE = [
@@ -79,8 +81,28 @@ const FAMILY_LABELS: Readonly<Record<Family, string>> = {
   monospace: 'Mono',
 };
 
+/**
+ * Each font button shows its name in its own alphabet, so the choice is seen
+ * rather than read. Serif has no Mathematical alphabet of its own (it is the
+ * default for bold and italic), so it is shown in the page's serif face.
+ */
+const FAMILY_FACES: Readonly<Record<Family, string>> = {
+  serif: 'Serif',
+  sans: inStyle('Sans', specimenOf('sans')),
+  script: inStyle('Script', specimenOf('script')),
+  fraktur: inStyle('Fraktur', specimenOf('fraktur')),
+  doublestruck: inStyle('Double', specimenOf('doublestruck')),
+  monospace: inStyle('Mono', specimenOf('monospace')),
+};
+
 /** Below this, a Flesch–Kincaid grade swings too much to be worth showing. */
 const READING_MIN_WORDS = 20;
+
+function specimenOf(id: string): (typeof SPECIMENS)[number] {
+  const found = SPECIMENS.find((candidate) => candidate.id === id);
+  if (found === undefined) throw new Error(`no specimen ${id}`);
+  return found;
+}
 
 const count = (n: number, one: string, many: string): string =>
   `${String(n)} ${n === 1 ? one : many}`;
@@ -160,6 +182,23 @@ export function Editor() {
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const pending = useRef<Selection | null>(null);
   const [status, setStatus] = useState('');
+  /*
+   * The two actions that throw work away can be taken back. People explore
+   * more freely when a mistake costs one click, not their post.
+   */
+  const [undo, setUndo] = useState<Document | null>(null);
+  const destroy = (next: Document, message: string) => {
+    setUndo(doc);
+    updateDoc(next);
+    setStatus(message);
+  };
+  const restoreUndo = () => {
+    if (undo === null) return;
+    updateDoc(undo);
+    setUndo(null);
+    setStatus('Restored.');
+    textarea.current?.focus();
+  };
 
   // Re-rendering changes the textarea value, so restore the selection afterwards.
   useLayoutEffect(() => {
@@ -257,6 +296,7 @@ export function Editor() {
     const next = command(doc, rangesFromSource(result.layout, current.start, current.end));
     textarea.current?.focus();
     if (next === doc) return;
+    setUndo(null);
     pending.current = current;
     setSelection(current);
     updateDoc(next);
@@ -266,6 +306,7 @@ export function Editor() {
   const edit = (text: string, selected: Selection) => {
     const next = applyEdit(doc, result, text);
     if (next === doc) return;
+    setUndo(null);
     pending.current = selected;
     updateDoc(next);
   };
@@ -318,7 +359,7 @@ export function Editor() {
   };
 
   return (
-    <section className="editor">
+    <section className="editor workspace">
       {pendingDraft !== null && (
         <div className="draft-prompt-scrim">
           <div
@@ -345,414 +386,449 @@ export function Editor() {
           </div>
         </div>
       )}
-      <div className="card editor-card" inert={pendingDraft !== null}>
-        <div className="targets" role="group" aria-label="Target">
-          <p className="targets-label">Writing for</p>
-          {PLATFORM_LIST.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={target === option.id}
-              onClick={() => {
-                setTarget(option.id);
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-          <p className="target-note">
-            {platform.note}
-            {platform.confidence === 'assumed' &&
-              ' Counting behaviour here is assumed, not tested.'}
-          </p>
-        </div>
-
-        <div className="toolbar">
-          <div role="group" aria-label="Font" className="group">
-            {FAMILIES.map((family) => (
+      <div className="workspace-main" inert={pendingDraft !== null}>
+        <div className="card editor-card">
+          {/*
+           * One command bar, in the order a post is shaped: the alphabet, then
+           * emphasis, then structure, then case. Familiar controls are icons
+           * with their names in the accessible name and a tooltip; the font
+           * buttons show their own alphabet, so the choice is seen, not read.
+           * The two actions that undo work sit apart at the far end.
+           */}
+          <div className="toolbar">
+            <div role="group" aria-label="Font" className="group group-fonts">
+              {FAMILIES.map((family) => (
+                <button
+                  key={family}
+                  type="button"
+                  title={FAMILY_LABELS[family]}
+                  aria-pressed={onlyFamily === family}
+                  disabled={state.families.size === 0}
+                  onClick={() => {
+                    change((current, selected) => setFamily(current, selected, family));
+                  }}
+                >
+                  <span aria-hidden="true" className={`font-face font-${family}`}>
+                    {FAMILY_FACES[family]}
+                  </span>
+                  <span className="visually-hidden">{FAMILY_LABELS[family]}</span>
+                </button>
+              ))}
+            </div>
+            <div role="group" aria-label="Emphasis" className="group">
               <button
-                key={family}
                 type="button"
-                aria-pressed={onlyFamily === family}
-                disabled={state.families.size === 0}
+                title="Bold (Ctrl or ⌘ B)"
+                aria-pressed={state.bold === 'on'}
+                aria-keyshortcuts="Control+B Meta+B"
+                disabled={!canEmphasize(state, 'bold')}
                 onClick={() => {
-                  change((current, selected) => setFamily(current, selected, family));
+                  emphasize('bold');
                 }}
               >
-                {FAMILY_LABELS[family]}
+                <BoldIcon />
+                <span className="visually-hidden">Bold</span>
               </button>
-            ))}
-          </div>
-          <div role="group" aria-label="Emphasis" className="group">
-            <button
-              type="button"
-              aria-pressed={state.bold === 'on'}
-              aria-keyshortcuts="Control+B Meta+B"
-              disabled={!canEmphasize(state, 'bold')}
-              onClick={() => {
-                emphasize('bold');
-              }}
-            >
-              <BoldIcon />
-              Bold
-            </button>
-            <button
-              type="button"
-              aria-pressed={state.italic === 'on'}
-              aria-keyshortcuts="Control+I Meta+I"
-              disabled={!canEmphasize(state, 'italic')}
-              onClick={() => {
-                emphasize('italic');
-              }}
-            >
-              <ItalicIcon />
-              Italic
-            </button>
+              <button
+                type="button"
+                title="Italic (Ctrl or ⌘ I)"
+                aria-pressed={state.italic === 'on'}
+                aria-keyshortcuts="Control+I Meta+I"
+                disabled={!canEmphasize(state, 'italic')}
+                onClick={() => {
+                  emphasize('italic');
+                }}
+              >
+                <ItalicIcon />
+                <span className="visually-hidden">Italic</span>
+              </button>
+              {/*
+               * Never disabled for want of an alphabet: a combining mark composes
+               * with every one, unlike bold and italic.
+               */}
+              <button
+                type="button"
+                title="Underline"
+                aria-pressed={state.underline === 'on'}
+                disabled={state.families.size === 0}
+                onClick={() => {
+                  decorate('underline');
+                }}
+              >
+                <UnderlineIcon />
+                <span className="visually-hidden">Underline</span>
+              </button>
+              <button
+                type="button"
+                title="Strikethrough"
+                aria-pressed={state.strikethrough === 'on'}
+                disabled={state.families.size === 0}
+                onClick={() => {
+                  decorate('strikethrough');
+                }}
+              >
+                <StrikethroughIcon />
+                <span className="visually-hidden">Strikethrough</span>
+              </button>
+            </div>
+            <div role="group" aria-label="Lists" className="group">
+              <button
+                type="button"
+                title="Bulleted list"
+                onClick={() => {
+                  list('bullet');
+                }}
+              >
+                <BulletListIcon />
+                <span className="visually-hidden">Bulleted list</span>
+              </button>
+              <button
+                type="button"
+                title="Numbered list"
+                onClick={() => {
+                  list('numbered');
+                }}
+              >
+                <NumberedListIcon />
+                <span className="visually-hidden">Numbered list</span>
+              </button>
+              <button
+                type="button"
+                title="Checklist"
+                onClick={() => {
+                  list('checklist');
+                }}
+              >
+                <ChecklistIcon />
+                <span className="visually-hidden">Checklist</span>
+              </button>
+            </div>
             {/*
-             * Never disabled: a combining mark composes with every alphabet, so
-             * unlike bold and italic there is no family that cannot take one.
+             * Apart from the styles: these change the words, and the plain pane
+             * changes with them. Nothing else in this bar does.
              */}
-            <button
-              type="button"
-              aria-pressed={state.underline === 'on'}
-              disabled={state.families.size === 0}
-              onClick={() => {
-                decorate('underline');
-              }}
-            >
-              <UnderlineIcon />
-              Underline
-            </button>
-            <button
-              type="button"
-              aria-pressed={state.strikethrough === 'on'}
-              disabled={state.families.size === 0}
-              onClick={() => {
-                decorate('strikethrough');
-              }}
-            >
-              <StrikethroughIcon />
-              Strikethrough
-            </button>
+            <div role="group" aria-label="Case" className="group">
+              <button
+                type="button"
+                title="Uppercase"
+                onClick={() => {
+                  transformCase('upper');
+                }}
+              >
+                <UppercaseIcon />
+                <span className="visually-hidden">Uppercase</span>
+              </button>
+              <button
+                type="button"
+                title="Lowercase"
+                onClick={() => {
+                  transformCase('lower');
+                }}
+              >
+                <LowercaseIcon />
+                <span className="visually-hidden">Lowercase</span>
+              </button>
+            </div>
+            <div role="group" aria-label="Reset" className="group group-reset">
+              <button
+                type="button"
+                title="Restore accessible text (remove all styling)"
+                onClick={() => {
+                  destroy(clearStyles(doc), 'All styling removed.');
+                }}
+              >
+                <RestoreIcon />
+                <span className="visually-hidden">Restore accessible text</span>
+              </button>
+              <button
+                type="button"
+                className="danger"
+                title="Clear post"
+                onClick={() => {
+                  destroy(fromText(''), 'Post cleared.');
+                  textarea.current?.focus();
+                }}
+              >
+                <ClearIcon />
+                <span className="visually-hidden">Clear post</span>
+              </button>
+            </div>
           </div>
-          <div role="group" aria-label="Lists" className="group">
-            <button
-              type="button"
-              onClick={() => {
-                list('bullet');
-              }}
-            >
-              <BulletListIcon />
-              Bulleted list
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                list('numbered');
-              }}
-            >
-              <NumberedListIcon />
-              Numbered list
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                list('checklist');
-              }}
-            >
-              <ChecklistIcon />
-              Checklist
-            </button>
-          </div>
-          {/*
-           * Its own group, away from the styles: these change the words, and
-           * the plain pane changes with them. Nothing else in this toolbar does.
-           */}
-          <div role="group" aria-label="Case" className="group">
-            <button
-              type="button"
-              onClick={() => {
-                transformCase('upper');
-              }}
-            >
-              <UppercaseIcon />
-              Uppercase
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                transformCase('lower');
-              }}
-            >
-              <LowercaseIcon />
-              Lowercase
-            </button>
-          </div>
-          <div role="group" aria-label="Reset" className="group">
-            <button
-              type="button"
-              onClick={() => {
-                updateDoc(clearStyles(doc));
-                setStatus('All styling removed.');
-              }}
-            >
-              <RestoreIcon />
-              Restore accessible text
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                updateDoc(fromText(''));
-                setStatus('Post cleared.');
-                textarea.current?.focus();
-              }}
-            >
-              <ClearIcon />
-              Clear post
-            </button>
-          </div>
-        </div>
 
-        <div className="panes">
-          <div className="pane">
-            <div className="pane-head">
-              <label htmlFor={`${id}-post`}>Post</label>
-              <span className="pane-hint">what readers see</span>
-            </div>
-            <textarea
-              id={`${id}-post`}
-              ref={textarea}
-              rows={22}
-              spellCheck
-              aria-describedby={`${id}-hint`}
-              value={result.output}
-              onKeyDown={onKeyDown}
-              onSelect={syncSelection}
-              onChange={(event) => {
-                const el = event.target;
-                edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
-              }}
-            />
-          </div>
-          <div className="pane">
-            <div className="pane-head">
-              {view === 'plain' ? (
-                <label htmlFor={`${id}-plain`}>
-                  Plain text <span className="pane-hint">what a screen reader hears</span>
-                </label>
-              ) : (
-                <p className="pane-title">
-                  Preview <span className="pane-hint">how the feed would lay it out</span>
-                </p>
-              )}
-              <div className="pane-views" role="group" aria-label="Right pane view">
-                <button
-                  type="button"
-                  aria-pressed={view === 'preview'}
-                  onClick={() => {
-                    setView('preview');
-                  }}
-                >
-                  <PreviewIcon />
-                  Preview
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={view === 'plain'}
-                  onClick={() => {
-                    setView('plain');
-                  }}
-                >
-                  <PlainTextIcon />
-                  Plain text
-                </button>
+          <div className="panes">
+            <div className="pane">
+              <div className="pane-head">
+                <label htmlFor={`${id}-post`}>Post</label>
+                <span className="pane-hint">what readers see</span>
               </div>
+              <textarea
+                id={`${id}-post`}
+                ref={textarea}
+                rows={12}
+                spellCheck
+                aria-describedby={`${id}-hint`}
+                value={result.output}
+                onKeyDown={onKeyDown}
+                onSelect={syncSelection}
+                onChange={(event) => {
+                  const el = event.target;
+                  edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
+                }}
+              />
             </div>
-            {view === 'plain' ? (
-              <textarea id={`${id}-plain`} rows={22} readOnly tabIndex={-1} value={plain} />
-            ) : (
-              <PostPreview text={result.output} platform={platform} measureFor={measureFor} />
+            <div className="pane pane-side">
+              <div className="pane-head">
+                {view === 'plain' ? (
+                  <label htmlFor={`${id}-plain`}>
+                    Plain text <span className="pane-hint">what a screen reader hears</span>
+                  </label>
+                ) : (
+                  <p className="pane-title">
+                    Preview <span className="pane-hint">how the feed would lay it out</span>
+                  </p>
+                )}
+                <Segmented
+                  label="Right pane view"
+                  className="pane-views"
+                  options={[
+                    { id: 'plain', label: 'Plain text' },
+                    { id: 'preview', label: 'Preview' },
+                  ]}
+                  value={view}
+                  onChange={(next) => {
+                    setView(next === 'preview' ? 'preview' : 'plain');
+                  }}
+                />
+              </div>
+              {view === 'plain' ? (
+                <textarea id={`${id}-plain`} rows={12} readOnly tabIndex={-1} value={plain} />
+              ) : (
+                <PostPreview text={result.output} platform={platform} measureFor={measureFor} />
+              )}
+            </div>
+          </div>
+
+          {/*
+           * The status bar: where the post is going, how much of it is left,
+           * and the one thing to do next. Copy styled is the primary action,
+           * last and filled, as a confirming action sits on its platform.
+           */}
+          <div className="statusbar">
+            <div className="statusbar-target">
+              <span className="targets-label mono" aria-hidden="true">
+                Writing for
+              </span>
+              <Segmented
+                label="Target"
+                className="targets"
+                options={PLATFORM_LIST.map((option) => ({ id: option.id, label: option.label }))}
+                value={target}
+                onChange={(next) => {
+                  const found = PLATFORM_LIST.find((option) => option.id === next);
+                  if (found) setTarget(found.id);
+                }}
+              />
+            </div>
+            {/*
+             * A group, not a live region: this count changes on every keystroke,
+             * and announcing it each time would talk over what is being typed.
+             * The copy confirmation below is the one thing worth announcing.
+             */}
+            <p className={length.over ? 'budget over' : 'budget'} role="group" aria-label="Length">
+              <span className="budget-count">
+                {platform.limit === null
+                  ? `${number(length.used)} characters`
+                  : `${number(length.used)} of ${number(platform.limit)}${length.over ? ' — over the limit' : ''}`}
+              </span>
+              {platform.limit !== null && (
+                <span className="meter" aria-hidden="true">
+                  <span
+                    className="meter-fill"
+                    style={{ transform: `scaleX(${String(Math.min(1, length.fraction ?? 0))})` }}
+                  />
+                </span>
+              )}
+              {length.styleCost > 0 && (
+                <span className="budget-cost">styling adds {number(length.styleCost)}</span>
+              )}
+            </p>
+          </div>
+
+          <div className="editor-foot">
+            <p id={`${id}-hint`} className="hint">
+              {platform.note}
+              {platform.confidence === 'assumed' &&
+                ' Counting behaviour here is assumed, not tested.'}{' '}
+              Select text to style it; Ctrl or ⌘ with B or I toggles bold and italic.
+            </p>
+            <p className="saved">
+              <LockIcon />
+              Your draft is saved in this browser and never sent anywhere.
+            </p>
+            <div role="group" aria-label="Copy" className="actions">
+              <button
+                type="button"
+                onClick={() => {
+                  void copy(plain, 'plain text');
+                }}
+              >
+                <PlainTextIcon />
+                Copy plain text
+              </button>
+              <button
+                type="button"
+                className="primary"
+                onClick={() => {
+                  void copy(result.output, 'the styled post');
+                }}
+              >
+                <CopyIcon />
+                Copy styled
+              </button>
+            </div>
+          </div>
+          <div className="status-row">
+            <p role="status" className="status">
+              {status}
+            </p>
+            {undo !== null && (
+              <button type="button" className="undo" onClick={restoreUndo}>
+                Undo
+              </button>
             )}
           </div>
         </div>
 
         {/*
-         * A group, not a live region: this count changes on every keystroke,
-         * and announcing it each time would talk over what is being typed.
-         * The copy confirmation below is the one thing worth announcing.
+         * The toolbar styles a selection; this styles the whole post. Rendered
+         * from the plain source, so picking one specimen after another never
+         * compounds the styling.
          */}
-        <p className={length.over ? 'budget over' : 'budget'} role="group" aria-label="Length">
-          <span>
-            {platform.limit === null
-              ? `${number(length.used)} characters`
-              : `${number(length.used)} of ${number(platform.limit)}${length.over ? ' — over the limit' : ''}`}
-          </span>
-          {platform.limit !== null && (
-            <span className="meter" aria-hidden="true">
-              <span
-                className="meter-fill"
-                style={{ width: `${String(Math.round((length.fraction ?? 0) * 100))}%` }}
-              />
-            </span>
-          )}
-          {length.styleCost > 0 && <span>styling adds {number(length.styleCost)}</span>}
-        </p>
-
-        <p id={`${id}-hint`} className="hint">
-          Select text to style it. Ctrl or ⌘ with B or I toggles bold and italic. Your draft is
-          saved in this browser.
-        </p>
-
-        <div role="group" aria-label="Copy" className="actions">
-          <button
-            type="button"
-            onClick={() => {
-              void copy(result.output, 'the styled post');
+        <section aria-labelledby={`${id}-styles`} className="card styles-card">
+          <div className="card-head">
+            <h2 id={`${id}-styles`}>Every style</h2>
+            <p className="hint">
+              The whole post in one alphabet, without selecting anything. The plain text is
+              untouched.
+            </p>
+          </div>
+          <StylePanel
+            text={plain}
+            onCopy={(styled, what) => {
+              void copy(styled, what);
             }}
-          >
-            <CopyIcon />
-            Copy styled
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              void copy(plain, 'plain text');
-            }}
-          >
-            <PlainTextIcon />
-            Copy plain text
-          </button>
-        </div>
-        <p role="status" className="status">
-          {status}
-        </p>
+          />
+        </section>
       </div>
 
-      {/*
-       * The toolbar styles a selection; this styles the whole post. Rendered
-       * from the plain source, so picking one specimen after another never
-       * compounds the styling.
-       */}
-      <section
-        aria-labelledby={`${id}-styles`}
-        className="card checks"
-        inert={pendingDraft !== null}
-      >
-        <h2 id={`${id}-styles`}>Every style</h2>
-        <p className="hint">
-          The whole post in one alphabet, without selecting anything. The plain text is untouched.
-        </p>
-        <StylePanel
-          text={plain}
-          onCopy={(styled, what) => {
-            void copy(styled, what);
-          }}
-        />
-      </section>
-
-      <section
-        aria-labelledby={`${id}-checks`}
-        className="card checks"
-        inert={pendingDraft !== null}
-      >
-        <h2 id={`${id}-checks`}>Checks</h2>
-        <ul className="stats">
-          <li>{count(stats.characters, 'character', 'characters')}</li>
-          <li>{count(stats.words, 'word', 'words')}</li>
-          <li>{count(stats.lines, 'line', 'lines')}</li>
-        </ul>
-        <p className="check">
-          <StructureIcon />
-          <span>
-            Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
-            {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
-            {structure.link && ' · ends with a link'}
-          </span>
-        </p>
-        <p className="check">
-          <ReadingIcon />
-          <span>
-            {reading.grade === null || reading.words < READING_MIN_WORDS
-              ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
-              : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
-          </span>
-        </p>
-        {/*
-         * Counted and warned about separately from substituted letters, because
-         * the two fail differently: a reader that folds mathematical
-         * alphanumerics back to ASCII still meets the combining mark (ADR 0010).
-         */}
-        {stats.decorated > 0 && (
-          <p className="check notice">
-            <WarningIcon />
-            <span>
-              {count(
-                stats.decorated,
-                'underlined or struck letter',
-                'underlined or struck letters',
-              )}
-              . These are a plain letter plus a combining mark, so each one costs two characters and
-              a screen reader may announce the mark or split it from its letter. They are the
-              riskiest styling here.
-            </span>
-          </p>
-        )}
-        {stats.styled > 0 ? (
-          <p className="check notice">
-            <WarningIcon />
-            <span>
-              {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may read each
-              one as a math symbol, such as “mathematical bold capital A”, or skip it. Keep the
-              words that matter most plain.
-            </span>
-          </p>
-        ) : (
+      <aside className="workspace-rail" inert={pendingDraft !== null}>
+        <section aria-labelledby={`${id}-checks`} className="card checks">
+          <h2 id={`${id}-checks`}>Checks</h2>
+          <ul className="stats">
+            <li>
+              <strong>{number(stats.characters)}</strong>{' '}
+              {stats.characters === 1 ? 'character' : 'characters'}
+            </li>
+            <li>
+              <strong>{number(stats.words)}</strong> {stats.words === 1 ? 'word' : 'words'}
+            </li>
+            <li>
+              <strong>{number(stats.lines)}</strong> {stats.lines === 1 ? 'line' : 'lines'}
+            </li>
+          </ul>
           <p className="check">
-            <CheckIcon />
+            <StructureIcon />
             <span>
-              No styled letters, so nothing here depends on how a screen reader handles them.
+              Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
+              {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
+              {structure.link && ' · ends with a link'}
             </span>
           </p>
-        )}
-        {gaps.length > 0 && (
-          <>
-            <p className="check">
+          <p className="check">
+            <ReadingIcon />
+            <span>
+              {reading.grade === null || reading.words < READING_MIN_WORDS
+                ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
+                : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
+            </span>
+          </p>
+          {/*
+           * Counted and warned about separately from substituted letters, because
+           * the two fail differently: a reader that folds mathematical
+           * alphanumerics back to ASCII still meets the combining mark (ADR 0010).
+           */}
+          {stats.decorated > 0 && (
+            <p className="check notice">
               <WarningIcon />
               <span>
-                {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
-                {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
-                {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
+                {count(
+                  stats.decorated,
+                  'underlined or struck letter',
+                  'underlined or struck letters',
+                )}
+                . These are a plain letter plus a combining mark, so each one costs two characters
+                and a screen reader may announce the mark or split it from its letter. They are the
+                riskiest styling here.
               </span>
             </p>
-            {/* A visual aid; the sentence above already says the same thing. */}
-            <pre className="preview" aria-hidden="true">
-              {segments(result.output, gaps).map((segment, index) =>
-                segment.mark === null ? (
-                  <span key={index}>{segment.text}</span>
-                ) : (
-                  <mark key={index}>{segment.text}</mark>
-                ),
-              )}
-            </pre>
-          </>
-        )}
-        {folded !== null && (
-          <>
-            <h3>
-              <FoldIcon />
-              Before “…see more”
-            </h3>
-            <p className="hint">
-              An unmeasured estimate for {platform.label}. It only appears in preview builds until
-              the real fold rule is measured.
+          )}
+          {stats.styled > 0 ? (
+            <p className="check notice">
+              <WarningIcon />
+              <span>
+                {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may read
+                each one as a math symbol, such as “mathematical bold capital A”, or skip it. Keep
+                the words that matter most plain.
+              </span>
             </p>
-            <pre className="preview fold">
-              {folded.visible}
-              {folded.truncated && <span className="ellipsis">{FEED_ESTIMATE.ellipsis}</span>}
-            </pre>
-          </>
-        )}
-      </section>
+          ) : (
+            <p className="check">
+              <CheckIcon />
+              <span>
+                No styled letters, so nothing here depends on how a screen reader handles them.
+              </span>
+            </p>
+          )}
+          {gaps.length > 0 && (
+            <>
+              <p className="check">
+                <WarningIcon />
+                <span>
+                  {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
+                  {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
+                  {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
+                </span>
+              </p>
+              {/* A visual aid; the sentence above already says the same thing. */}
+              <pre className="preview" aria-hidden="true">
+                {segments(result.output, gaps).map((segment, index) =>
+                  segment.mark === null ? (
+                    <span key={index}>{segment.text}</span>
+                  ) : (
+                    <mark key={index}>{segment.text}</mark>
+                  ),
+                )}
+              </pre>
+            </>
+          )}
+          {folded !== null && (
+            <>
+              <h3>
+                <FoldIcon />
+                Before “…see more”
+              </h3>
+              <p className="hint">
+                An unmeasured estimate for {platform.label}. It only appears in preview builds until
+                the real fold rule is measured.
+              </p>
+              <pre className="preview fold">
+                {folded.visible}
+                {folded.truncated && <span className="ellipsis">{FEED_ESTIMATE.ellipsis}</span>}
+              </pre>
+            </>
+          )}
+        </section>
+      </aside>
     </section>
   );
 }

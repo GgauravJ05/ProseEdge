@@ -3,7 +3,9 @@
 
 'use client';
 
-import { CopyIcon } from './icons';
+import { useRef, useState } from 'react';
+
+import { CheckIcon, CopyIcon } from './icons';
 import { SPECIMENS, inStyle } from './specimens';
 
 /** Enough of the post to recognise the style, without rendering it fourteen times over. */
@@ -33,6 +35,9 @@ function preview(text: string): string {
  */
 export function StylePanel({ text, onCopy }: StylePanelProps) {
   const sample = preview(text);
+  // Which card was just copied, so its button can say so where the eye already is.
+  const [copied, setCopied] = useState<string | null>(null);
+  const timer = useRef<number | undefined>(undefined);
 
   if (sample === '') {
     return (
@@ -44,28 +49,35 @@ export function StylePanel({ text, onCopy }: StylePanelProps) {
     <ul className="style-list">
       {SPECIMENS.map((specimen) => (
         <li key={specimen.id} className="style-row" data-style={specimen.id}>
-          <span className="style-sample">{inStyle(sample, specimen)}</span>
-          <span className="style-label" id={`style-${specimen.id}`}>
+          <span className="style-label mono" id={`style-${specimen.id}`}>
             {specimen.label}
           </span>
+          <span className="style-sample">{inStyle(sample, specimen)}</span>
           {/*
            * Deliberately not named after its style. Accessible names match by
            * substring, so "Copy in bold" made these fourteen buttons intercept
            * every `{ name: 'Bold' }` lookup in the suite, and naming them after
-           * the post collided with the editor's own Post label. The row's
+           * the post collided with the editor's own Post label. The card's
            * visible label already says which style this is; `aria-describedby`
            * ties the two together for a screen reader, and tests address the
-           * row by `data-style`.
+           * card by `data-style`.
            */}
           <button
             type="button"
             aria-label="Copy"
             aria-describedby={`style-${specimen.id}`}
+            className={copied === specimen.id ? 'is-copied' : undefined}
             onClick={() => {
               onCopy(inStyle(text, specimen), `the ${specimen.label.toLowerCase()} version`);
+              setCopied(specimen.id);
+              window.clearTimeout(timer.current);
+              timer.current = window.setTimeout(() => {
+                setCopied(null);
+              }, 1400);
             }}
           >
-            <CopyIcon />
+            {copied === specimen.id ? <CheckIcon /> : <CopyIcon />}
+            <span aria-hidden="true">{copied === specimen.id ? 'Copied' : 'Copy'}</span>
           </button>
         </li>
       ))}
