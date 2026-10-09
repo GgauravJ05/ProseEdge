@@ -1,6 +1,6 @@
 {
   "name": "prose-edge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "On-device text formatting with a measured accessibility and engagement model",
   "license": "AGPL-3.0-or-later",
