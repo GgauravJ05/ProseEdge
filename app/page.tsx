@@ -12,6 +12,9 @@ import {
   StructureIcon,
   WarningIcon,
 } from '../src/ui/icons';
+import { Magnetic } from '../src/ui/motion/magnetic';
+import { Reveal } from '../src/ui/motion/reveal';
+import { Sheen } from '../src/ui/motion/sheen';
 
 /**
  * The landing page.
@@ -79,7 +82,7 @@ export default function Home() {
   return (
     <main className="landing">
       <section className="hero">
-        <div className="hero-copy">
+        <Reveal className="hero-copy">
           <p className="eyebrow">Local-first · Open source · v0.1</p>
           <h1>
             Unicode &ldquo;bold&rdquo; is <span className="underline-accent">not rich text</span>
@@ -90,15 +93,17 @@ export default function Home() {
             ProseEdge does the same formatting — and is the only one that shows you the cost.
           </p>
           <div className="cta-row">
-            <Link href="/format" className="cta-primary">
-              Format now
-            </Link>
+            <Magnetic>
+              <Link href="/format" className="cta-primary">
+                Format now
+              </Link>
+            </Magnetic>
             <a href="#how" className="cta-secondary">
               How it works
             </a>
           </div>
           <p className="cta-note">No sign-up. Nothing you type is sent anywhere.</p>
-        </div>
+        </Reveal>
 
         <ul className="hero-specimen" aria-label="One sentence in each alphabet ProseEdge writes">
           {SPECIMEN.map(({ label, sample }) => (
@@ -117,15 +122,15 @@ export default function Home() {
       <section className="band" id="how" aria-labelledby="how-title">
         <h2 id="how-title">The trade nobody mentions</h2>
         <div className="compare">
-          <article className="compare-card">
+          <Sheen as="article" className="compare-card">
             <h3>What you paste</h3>
             <p className="compare-sample">𝗪𝗲&rsquo;𝗿𝗲 𝗵𝗶𝗿𝗶𝗻𝗴</p>
             <p className="compare-note">
               Six mathematical sans-serif bold characters. LinkedIn search will not match
               &ldquo;hiring&rdquo;, and on some devices they render as empty boxes.
             </p>
-          </article>
-          <article className="compare-card">
+          </Sheen>
+          <Sheen as="article" className="compare-card">
             <h3>What a screen reader may hear</h3>
             <p className="compare-sample compare-plain">
               mathematical sans-serif bold capital W, mathematical sans-serif bold small e&hellip;
@@ -134,7 +139,7 @@ export default function Home() {
               Or nothing at all, if the reader skips symbols it cannot name. The words are gone
               either way.
             </p>
-          </article>
+          </Sheen>
         </div>
         <p className="band-close">
           <CheckIcon />
@@ -150,13 +155,13 @@ export default function Home() {
         <h2 id="features-title">What you get</h2>
         <ul className="feature-grid">
           {FEATURES.map((feature) => (
-            <li key={feature.title} className="feature">
+            <Sheen as="li" key={feature.title} className="feature">
               <span className="feature-icon" aria-hidden="true">
                 {feature.icon}
               </span>
               <h3>{feature.title}</h3>
               <p>{feature.body}</p>
-            </li>
+            </Sheen>
           ))}
         </ul>
       </section>
@@ -169,11 +174,11 @@ export default function Home() {
         </p>
         <ul className="platform-grid">
           {PLATFORMS.map((platform) => (
-            <li key={platform.name} className="platform-card">
+            <Sheen as="li" key={platform.name} className="platform-card">
               <span className="platform-name">{platform.name}</span>
               <span className="platform-limit">{platform.limit}</span>
               <span className="platform-note">{platform.note}</span>
-            </li>
+            </Sheen>
           ))}
         </ul>
         <p className="band-footnote">

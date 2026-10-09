@@ -1,7 +1,10 @@
 /*
- * Editorial ink and amber. One accent, warm paper, a serif display face for
- * headings and a sans for everything you operate. Every colour pair here is
- * checked by the axe scans in e2e/a11y.spec.ts, which fail on WCAG AA contrast.
+ * Cool paper and one orange accent (ADR 0013). Light is the default; dark is
+ * charcoal #09090b with a faint noise layer, a radial glow and hairline white
+ * borders. Display type is Space Grotesk, body is Plus Jakarta Sans, and
+ * JetBrains Mono carries labels, counts and anything the reader should treat
+ * as data. Every colour pair here is checked by the axe scans in
+ * e2e/a11y.spec.ts, which fail on WCAG AA contrast.
  *
  * Component styles live in landing.css (the marketing page, logo and footer)
  * and panes.css (the editor). The imports must stay above every rule: CSS
@@ -23,61 +26,69 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --paper: #fbf7f0;
+  --paper: #f5f5f2;
   --surface: #ffffff;
-  --surface-sunken: #f4eee4;
-  --ink: #16130f;
-  --muted: #5a5249;
-  --line: #e6dccc;
-  --line-strong: #cdbfa9;
-  --accent: #a14b08;
-  --accent-hover: #8a3f06;
+  --surface-sunken: #ecece7;
+  --ink: #121417;
+  --muted: #52565e;
+  --line: #dcdcd5;
+  --line-strong: #b9b9b0;
+  --accent: #b83a0a;
+  --accent-hover: #8f2d08;
   --accent-ink: #ffffff;
-  --accent-soft: #fceeda;
-  --mark: #f6d28a;
-  --danger: #8f2c12;
-  --shadow: 0 1px 2px rgb(22 19 15 / 6%), 0 8px 24px -16px rgb(22 19 15 / 25%);
+  --accent-soft: #fff0e3;
+  --mark: #fdd6b0;
+  --danger: #b42318;
+  --glow: rgb(234 88 12 / 16%);
+  --noise-opacity: 0.035;
+  --shadow: 0 1px 2px rgb(18 20 23 / 6%), 0 12px 32px -18px rgb(18 20 23 / 28%);
 
   --radius: 0.625rem;
   --radius-sm: 0.375rem;
 
   --font-sans: var(--font-jakarta), system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-serif: var(--font-space-grotesk), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-display: var(--font-space-grotesk), system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   font-family: var(--font-sans);
   line-height: 1.6;
-  background: var(--paper);
+  /*
+   * Depth: one warm glow from the top edge. It lives on the root, not the body,
+   * so the grain layer (body::before, z-index -1) paints above it.
+   */
+  background:
+    radial-gradient(60rem 28rem at 50% -8rem, var(--glow), transparent 70%) no-repeat,
+    var(--paper);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
 
 /*
- * Modern dark palette: cool near-black paper with an indigo-violet accent
- * (replacing the amber used in light mode), so gradients built from
- * --accent/--accent-hover read as a deliberate aurora rather than a flat
- * fill. Every pair actually used in globals.css/landing.css/panes.css was
- * checked against WCAG AA (>=4.5:1 for text) before landing here — see
- * scratchpad/contrast.mjs in the PR that introduced this palette for the
- * numbers — because e2e/a11y.spec.ts scans this theme too.
+ * Dark is charcoal, not blue-black: #09090b paper, near-black cards, and a
+ * brighter orange that keeps 7:1 or better against every surface it sits on.
+ * Borders are solid tokens (the hairline white/10 look, flattened) so axe can
+ * measure them. The measured ratios are recorded in ADR 0013.
  */
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --paper: #0a0c12;
-  --surface: #12151e;
-  --surface-sunken: #181c28;
-  --ink: #f2f4fa;
-  --muted: #a7b0c4;
-  --line: #242938;
-  --line-strong: #39415a;
-  --accent: #8f7cf7;
-  --accent-hover: #a996fa;
-  --accent-ink: #0d0a1f;
-  --accent-soft: #211c3a;
-  --mark: #4a3f80;
-  --danger: #ff9d8a;
-  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px -16px rgb(0 0 0 / 70%);
+  --paper: #09090b;
+  --surface: #111113;
+  --surface-sunken: #18181b;
+  --ink: #fafafa;
+  --muted: #a1a1aa;
+  --line: #212126;
+  --line-strong: #3a3a42;
+  --accent: #fb923c;
+  --accent-hover: #fdba74;
+  --accent-ink: #190b02;
+  --accent-soft: #2a1a0e;
+  --mark: #7a3b0d;
+  --danger: #fca5a5;
+  --glow: rgb(251 146 60 / 14%);
+  --noise-opacity: 0.06;
+  --shadow: 0 0 0 1px rgb(255 255 255 / 4%), 0 12px 32px -16px rgb(0 0 0 / 80%);
 }
 
 *,
@@ -94,13 +105,46 @@ body {
   flex-direction: column;
 }
 
+/*
+ * Film grain. A fixed, inert layer of SVG turbulence at a few percent opacity
+ * breaks up the flat fill and the banding in the gradient. It is a data: URI,
+ * so no request is made, and it never takes pointer events.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 h1,
 h2,
 h3 {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+/* Small labels and figures read as data, so they are set in the mono face. */
+.eyebrow,
+.specimen-label,
+.targets-label,
+.pane-hint,
+.hero-tag,
+.platform-limit {
+  font-family: var(--font-mono);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 a {
@@ -524,4 +568,38 @@ mark {
 
 .prose p {
   max-width: 38rem;
+}
+
+/* Light reflection ---------------------------------------------------------- */
+
+/*
+ * A soft highlight that follows a mouse across a surface (Sheen sets --sx and
+ * --sy). It sits above the background and below the content, never takes
+ * pointer events, and is simply absent on touch devices.
+ */
+.sheen {
+  position: relative;
+  isolation: isolate;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sheen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+      22rem circle at var(--sx, 50%) var(--sy, 0%),
+      var(--glow),
+      transparent 65%
+    );
+    transition: opacity 200ms ease;
+  }
+
+  .sheen:hover::before {
+    opacity: 1;
+  }
 }

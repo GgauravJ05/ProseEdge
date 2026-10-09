@@ -3,11 +3,13 @@
 
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
+import { JetBrains_Mono, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { Logo, Wordmark } from '../src/ui/logo';
+import { Magnetic } from '../src/ui/motion/magnetic';
+import { MotionRoot } from '../src/ui/motion/motion-root';
 import { ThemeToggle } from '../src/ui/theme-toggle';
 import { THEME_SCRIPT } from '../src/ui/theme';
 
@@ -20,6 +22,12 @@ const display = Space_Grotesk({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-space-grotesk',
+});
+
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-jetbrains-mono',
 });
 
 const title = 'ProseEdge — Unicode text formatter for social posts';
@@ -38,7 +46,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   // The app ships light and only changes on request, so the browser chrome
   // matches the light paper rather than the operating system.
-  themeColor: '#fbf7f0',
+  themeColor: '#f5f5f2',
   colorScheme: 'light dark',
 };
 
@@ -51,7 +59,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     // before paint from the remembered choice, and rendering it here would make
     // hydration restore the default and undo that on every reload.
     // `suppressHydrationWarning` tells React the difference is intended.
-    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${display.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+    >
       <head>
         {/*
          * Applies the remembered theme before anything paints, so a reader who
@@ -60,66 +72,76 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
          * scripts, and this one touches only localStorage and <html>.
          */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* Reveal starts hidden in the prerendered markup; without JavaScript nothing would show it. */}
+        <noscript>
+          <style>
+            {'[data-reveal],[data-reveal] *{opacity:1!important;transform:none!important}'}
+          </style>
+        </noscript>
       </head>
       <body>
-        <a className="skip-link" href="#content">
-          Skip to content
-        </a>
-        <header className="site-header">
-          <Link href="/" className="brand" aria-label="ProseEdge home">
-            <Wordmark />
-          </Link>
-          <nav aria-label="Site" className="site-nav">
-            <Link href="/privacy">Privacy</Link>
-            <ThemeToggle />
-            <Link href="/format" className="nav-cta">
-              Format now
+        <MotionRoot>
+          <a className="skip-link" href="#content">
+            Skip to content
+          </a>
+          <header className="site-header">
+            <Link href="/" className="brand" aria-label="ProseEdge home">
+              <Wordmark />
             </Link>
-          </nav>
-        </header>
-        <div id="content">{children}</div>
-        <footer className="site-footer">
-          <div className="footer-top">
-            <div className="footer-brand">
-              <span className="brand">
-                <Logo size={24} />
-                <span className="brand-name">ProseEdge</span>
-              </span>
+            <nav aria-label="Site" className="site-nav">
+              <Link href="/privacy">Privacy</Link>
+              <ThemeToggle />
+              <Magnetic>
+                <Link href="/format" className="nav-cta">
+                  Format now
+                </Link>
+              </Magnetic>
+            </nav>
+          </header>
+          <div id="content">{children}</div>
+          <footer className="site-footer">
+            <div className="footer-top">
+              <div className="footer-brand">
+                <span className="brand">
+                  <Logo size={24} />
+                  <span className="brand-name">ProseEdge</span>
+                </span>
+                <p>
+                  Styled letters are Unicode symbols, not rich text. The plain version is always one
+                  click away.
+                </p>
+              </div>
+              <nav className="footer-links" aria-label="Product">
+                <h2>Product</h2>
+                <Link href="/format">Formatter</Link>
+                <Link href="/#how">How it works</Link>
+                <Link href="/#features-title">Features</Link>
+              </nav>
+              <nav className="footer-links" aria-label="About">
+                <h2>About</h2>
+                <Link href="/privacy">Privacy</Link>
+                <a href="https://github.com/GgauravJ05/ProseEdge" rel="noreferrer">
+                  Source
+                </a>
+                <a href="https://www.gnu.org/licenses/agpl-3.0.html" rel="license noreferrer">
+                  AGPL-3.0
+                </a>
+              </nav>
+            </div>
+            <div className="footer-bottom">
+              <p>© 2026 Gaurav Jadhav · Free software under the AGPL-3.0-or-later.</p>
+              {/*
+               * We render an approximation of each feed's layout and borrow no
+               * logo or brand colour (ADR 0009); saying so plainly is part of
+               * keeping that line clear.
+               */}
               <p>
-                Styled letters are Unicode symbols, not rich text. The plain version is always one
-                click away.
+                Not affiliated with, endorsed by, or connected to LinkedIn, X, Instagram or Threads.
+                Platform names are the trademarks of their respective owners.
               </p>
             </div>
-            <nav className="footer-links" aria-label="Product">
-              <h2>Product</h2>
-              <Link href="/format">Formatter</Link>
-              <Link href="/#how">How it works</Link>
-              <Link href="/#features-title">Features</Link>
-            </nav>
-            <nav className="footer-links" aria-label="About">
-              <h2>About</h2>
-              <Link href="/privacy">Privacy</Link>
-              <a href="https://github.com/GgauravJ05/ProseEdge" rel="noreferrer">
-                Source
-              </a>
-              <a href="https://www.gnu.org/licenses/agpl-3.0.html" rel="license noreferrer">
-                AGPL-3.0
-              </a>
-            </nav>
-          </div>
-          <div className="footer-bottom">
-            <p>© 2026 Gaurav Jadhav · Free software under the AGPL-3.0-or-later.</p>
-            {/*
-             * We render an approximation of each feed's layout and borrow no
-             * logo or brand colour (ADR 0009); saying so plainly is part of
-             * keeping that line clear.
-             */}
-            <p>
-              Not affiliated with, endorsed by, or connected to LinkedIn, X, Instagram or Threads.
-              Platform names are the trademarks of their respective owners.
-            </p>
-          </div>
-        </footer>
+          </footer>
+        </MotionRoot>
         {onVercel && <Analytics />}
       </body>
     </html>
