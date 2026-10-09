@@ -38,7 +38,7 @@ test('the page runs clean under the policy, with its fonts and styles applied', 
     if (message.type() === 'error') blocked.push(message.text());
   });
   await page.goto('/');
-  await expect(page.getByLabel('Post')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   // A blocked stylesheet or font would leave these at the browser defaults.
   const fonts = await page.evaluate(() => ({
