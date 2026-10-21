@@ -43,7 +43,7 @@ lookalikes.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/app-format-dark.png">
-  <img alt="The formatter: one sheet with a toolbar of alphabet, emphasis, list and case controls; the post below it with 'product designer' selected and a small bold, italic, underline and strikethrough bar floating over it; then the LinkedIn character budget, and a Checks panel reading the styled words out as a screen reader may, as 'mathematical sans-serif bold capital w' and so on." src="docs/screenshots/app-format-light.png">
+  <img alt="The formatter on a wide screen: on the left, a toolbar of alphabet, emphasis, list and case controls above the post, with 'product designer' selected and a small bold, italic, underline and strikethrough bar floating over it, then the LinkedIn character budget and the copy buttons; on the right, a Checks column reading the styled words out as a screen reader may, as 'mathematical sans-serif bold capital w' and so on." src="docs/screenshots/app-format-light.png">
 </picture>
 
 Light and dark follow an explicit in-app toggle, not the operating system's

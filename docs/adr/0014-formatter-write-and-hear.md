@@ -44,6 +44,10 @@ restore-draft prompt.
   float over selected words on fine pointers. It repeats toolbar buttons, so it
   is hidden from assistive technology and the tab order; touch screens never
   show it, because the system selection menu sits there.
+- **Beside, on wide screens.** From 70rem the Checks section moves into a
+  sticky column to the right of the post, so the read-out changes in view as
+  you type instead of a scroll below. The post column sets the sheet's height
+  (size containment on the column); phones keep the stacked order.
 - **Empty first.** The editor opens empty with a "Try an example" button whose
   post already carries some styling.
 
