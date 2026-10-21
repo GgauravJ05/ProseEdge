@@ -713,145 +713,154 @@ export function Editor() {
         </div>
 
         <section className="listen" aria-labelledby={`${id}-checks`}>
-          <div className="listen-head">
-            <h2 id={`${id}-checks`} className="listen-title">
-              Checks
-            </h2>
-            <Segmented
-              label="Output view"
-              className="views"
-              options={[
-                { id: 'hear', label: 'Hear it' },
-                { id: 'plain', label: 'Plain text' },
-                { id: 'feed', label: 'Feed preview' },
-              ]}
-              value={view}
-              onChange={(next) => {
-                setView(next === 'plain' || next === 'feed' ? next : 'hear');
-              }}
-            />
-          </div>
+          {/* Sticky on wide screens, so the checks stay beside the words being typed. */}
+          <div className="listen-inner">
+            <div className="listen-head">
+              <h2 id={`${id}-checks`} className="listen-title">
+                Checks
+              </h2>
+              <Segmented
+                label="Output view"
+                className="views"
+                options={[
+                  { id: 'hear', label: 'Hear it' },
+                  { id: 'plain', label: 'Plain text' },
+                  { id: 'feed', label: 'Feed preview' },
+                ]}
+                value={view}
+                onChange={(next) => {
+                  setView(next === 'plain' || next === 'feed' ? next : 'hear');
+                }}
+              />
+            </div>
 
-          {view === 'hear' &&
-            (empty ? (
-              <p className="listen-note">
-                Your post will appear here the way a screen reader may read it out.
-              </p>
-            ) : styledCount === 0 ? (
-              <p className="listen-note ok">
-                <CheckIcon />
-                <span>
-                  No styled letters, so a screen reader reads your post exactly as written.
-                </span>
-              </p>
-            ) : (
+            {view === 'hear' &&
+              (empty ? (
+                <p className="listen-note">
+                  Your post will appear here the way a screen reader may read it out.
+                </p>
+              ) : styledCount === 0 ? (
+                <p className="listen-note ok">
+                  <CheckIcon />
+                  <span>
+                    No styled letters, so a screen reader reads your post exactly as written.
+                  </span>
+                </p>
+              ) : (
+                <>
+                  <HearPanel output={shown.output} />
+                  {stats.styled > 0 && (
+                    <p className="listen-note warn">
+                      <WarningIcon />
+                      <span>
+                        {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may
+                        read each one as a math symbol, as above, or skip it. Keep the words that
+                        matter most plain.
+                      </span>
+                    </p>
+                  )}
+                  {/*
+                   * Counted separately from substituted letters, because the two
+                   * fail differently: a reader that folds mathematical
+                   * alphanumerics back to ASCII still meets the combining mark
+                   * (ADR 0010).
+                   */}
+                  {stats.decorated > 0 && (
+                    <p className="listen-note warn">
+                      <WarningIcon />
+                      <span>
+                        {count(
+                          stats.decorated,
+                          'underlined or struck letter',
+                          'underlined or struck letters',
+                        )}
+                        . Each is a plain letter plus a combining mark, so it costs two characters
+                        and a screen reader may announce the mark or split it from its letter.
+                      </span>
+                    </p>
+                  )}
+                </>
+              ))}
+
+            {view === 'plain' && (
               <>
-                <HearPanel output={shown.output} />
-                {stats.styled > 0 && (
-                  <p className="listen-note warn">
-                    <WarningIcon />
-                    <span>
-                      {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may
-                      read each one as a math symbol, as above, or skip it. Keep the words that
-                      matter most plain.
-                    </span>
-                  </p>
-                )}
-                {/*
-                 * Counted separately from substituted letters, because the two
-                 * fail differently: a reader that folds mathematical
-                 * alphanumerics back to ASCII still meets the combining mark
-                 * (ADR 0010).
-                 */}
-                {stats.decorated > 0 && (
-                  <p className="listen-note warn">
-                    <WarningIcon />
-                    <span>
-                      {count(
-                        stats.decorated,
-                        'underlined or struck letter',
-                        'underlined or struck letters',
-                      )}
-                      . Each is a plain letter plus a combining mark, so it costs two characters and
-                      a screen reader may announce the mark or split it from its letter.
-                    </span>
-                  </p>
-                )}
+                <label htmlFor={`${id}-plain`} className="visually-hidden">
+                  Plain text
+                </label>
+                <textarea
+                  id={`${id}-plain`}
+                  className="plain"
+                  rows={6}
+                  readOnly
+                  value={shownPlain}
+                />
               </>
-            ))}
+            )}
 
-          {view === 'plain' && (
-            <>
-              <label htmlFor={`${id}-plain`} className="visually-hidden">
-                Plain text
-              </label>
-              <textarea id={`${id}-plain`} className="plain" rows={6} readOnly value={shownPlain} />
-            </>
-          )}
+            {view === 'feed' && (
+              <PostPreview text={shown.output} platform={platform} measureFor={measureFor} />
+            )}
 
-          {view === 'feed' && (
-            <PostPreview text={shown.output} platform={platform} measureFor={measureFor} />
-          )}
+            {gaps.length > 0 && (
+              <>
+                <p className="listen-note">
+                  <WarningIcon />
+                  <span>
+                    {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
+                    {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
+                    {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
+                  </span>
+                </p>
+                {/* A visual aid; the sentence above already says the same thing. */}
+                <pre className="gaps" aria-hidden="true">
+                  {segments(shown.output, gaps).map((segment, index) =>
+                    segment.mark === null ? (
+                      <span key={index}>{segment.text}</span>
+                    ) : (
+                      <mark key={index}>{segment.text}</mark>
+                    ),
+                  )}
+                </pre>
+              </>
+            )}
 
-          {gaps.length > 0 && (
-            <>
-              <p className="listen-note">
-                <WarningIcon />
-                <span>
-                  {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
-                  {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
-                  {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
-                </span>
-              </p>
-              {/* A visual aid; the sentence above already says the same thing. */}
-              <pre className="gaps" aria-hidden="true">
-                {segments(shown.output, gaps).map((segment, index) =>
-                  segment.mark === null ? (
-                    <span key={index}>{segment.text}</span>
-                  ) : (
-                    <mark key={index}>{segment.text}</mark>
-                  ),
-                )}
-              </pre>
-            </>
-          )}
+            {folded !== null && (
+              <>
+                <h3 className="fold-title">
+                  <FoldIcon />
+                  Before “…see more”
+                </h3>
+                <p className="hint">
+                  An unmeasured estimate for {platform.label}. It only appears in preview builds
+                  until the real fold rule is measured.
+                </p>
+                <pre className="gaps fold">
+                  {folded.visible}
+                  {folded.truncated && <span className="ellipsis">{FEED_ESTIMATE.ellipsis}</span>}
+                </pre>
+              </>
+            )}
 
-          {folded !== null && (
-            <>
-              <h3 className="fold-title">
-                <FoldIcon />
-                Before “…see more”
-              </h3>
-              <p className="hint">
-                An unmeasured estimate for {platform.label}. It only appears in preview builds until
-                the real fold rule is measured.
-              </p>
-              <pre className="gaps fold">
-                {folded.visible}
-                {folded.truncated && <span className="ellipsis">{FEED_ESTIMATE.ellipsis}</span>}
-              </pre>
-            </>
-          )}
-
-          {!empty && (
-            <>
-              <ul className="stats">
-                <li>{count(stats.characters, 'character', 'characters')}</li>
-                <li>{count(stats.words, 'word', 'words')}</li>
-                <li>{count(stats.lines, 'line', 'lines')}</li>
-              </ul>
-              <p className="facts">
-                Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
-                {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
-                {structure.link && ' · ends with a link'}
-              </p>
-              <p className="facts">
-                {reading.grade === null || reading.words < READING_MIN_WORDS
-                  ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
-                  : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
-              </p>
-            </>
-          )}
+            {!empty && (
+              <>
+                <ul className="stats">
+                  <li>{count(stats.characters, 'character', 'characters')}</li>
+                  <li>{count(stats.words, 'word', 'words')}</li>
+                  <li>{count(stats.lines, 'line', 'lines')}</li>
+                </ul>
+                <p className="facts">
+                  Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
+                  {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
+                  {structure.link && ' · ends with a link'}
+                </p>
+                <p className="facts">
+                  {reading.grade === null || reading.words < READING_MIN_WORDS
+                    ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
+                    : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
+                </p>
+              </>
+            )}
+          </div>
         </section>
 
         <div className="dock">

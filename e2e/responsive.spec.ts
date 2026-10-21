@@ -116,11 +116,19 @@ test.describe('touch devices', () => {
   });
 });
 
-test('the checks sit under the editor on a wide screen too, not beside it', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
+test('on a wide screen the checks sit beside the post and stay in view', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/format');
-  const post = await page.getByLabel('Post').boundingBox();
-  const checks = await page.getByRole('region', { name: 'Checks' }).boundingBox();
-  expect(checks?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0) - 1);
-  expect(Math.abs((checks?.x ?? 0) - (post?.x ?? 0))).toBeLessThan(40);
+  const post = page.getByLabel('Post');
+  const checks = page.getByRole('region', { name: 'Checks' });
+  const postBox = await post.boundingBox();
+  const checksBox = await checks.boundingBox();
+  // Beside, not below: the checks start right of the post and level with its top.
+  expect(checksBox?.x ?? 0).toBeGreaterThan((postBox?.x ?? 0) + (postBox?.width ?? 0));
+  expect(checksBox?.y ?? 0).toBeLessThan(postBox?.y ?? 0);
+
+  // A long post scrolls the page; the checks heading stays on screen beside it.
+  await post.fill('A line of the post.\n'.repeat(60));
+  await page.mouse.wheel(0, 600);
+  await expect(checks.getByRole('heading', { name: 'Checks' })).toBeInViewport();
 });

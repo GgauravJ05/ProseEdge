@@ -708,6 +708,101 @@ body:has(.format-page) .nav-cta {
   font-weight: 600;
 }
 
+/* Wide screens: write on the left, hear it on the right ------------------- */
+
+/*
+ * Stacked, the checks sat a scroll below the post, so every change meant
+ * scrolling down to see what it cost and back up to keep writing. From 70rem
+ * the sheet widens and the checks take a column beside the post, sticky, so
+ * the read-out changes in view as you type. The DOM order is unchanged — the
+ * post, then its checks — so reading order and tab order stay the same.
+ */
+@media (min-width: 70rem) {
+  .format-page {
+    max-width: 82rem;
+  }
+
+  .studio .sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(22rem, 27rem);
+    grid-template-rows: auto 1fr auto auto;
+    align-items: stretch;
+    grid-template-areas:
+      'toolbar listen'
+      'compose listen'
+      'measure listen'
+      'dock listen';
+  }
+
+  .studio .toolbar {
+    grid-area: toolbar;
+    border-radius: var(--sheet-radius) 0 0 0;
+  }
+
+  .studio .compose {
+    grid-area: compose;
+  }
+
+  .studio .compose textarea {
+    min-height: 22rem;
+  }
+
+  .studio .measure {
+    grid-area: measure;
+  }
+
+  .studio .dock {
+    grid-area: dock;
+  }
+
+  /*
+   * Size containment: the post column sets the sheet's height, and the checks
+   * scroll inside it. Without it a long read-out stretched the editor row and
+   * pushed the copy buttons below the fold.
+   */
+  .studio .listen {
+    grid-area: listen;
+    contain: size;
+    padding: 0;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    border-radius: 0 var(--sheet-radius) var(--sheet-radius) 0;
+  }
+
+  .studio .listen-inner {
+    position: sticky;
+    top: 5rem;
+    max-height: min(100%, calc(100dvh - 6rem));
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  /* The column scrolls as a whole, so the transcript need not scroll inside it. */
+  .studio .transcript {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .studio .listen-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .studio .views {
+    width: 100%;
+  }
+
+  .studio .views button {
+    flex: 1;
+  }
+
+  /* The feed card is drawn at a desktop feed's width; fit it to the column. */
+  .studio .preview-card {
+    max-width: 100%;
+  }
+}
+
 /* Small screens ------------------------------------------------------------- */
 
 @media (max-width: 40rem) {
