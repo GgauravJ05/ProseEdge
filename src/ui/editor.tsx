@@ -26,7 +26,6 @@ import type { Document, ListMarker, TextRange } from '../document';
 import { flags } from '../flags';
 import { coverageMarks, postStats, segments, structureOf } from './checks';
 import {
-  FAMILIES,
   applyEdit,
   canEmphasize,
   selectionState,
@@ -38,6 +37,7 @@ import type { Decoration, Emphasis, Family } from './commands';
 import { recase } from './case';
 import type { CaseTransform } from './case';
 import { browserDrafts } from './draft';
+import { HearPanel } from './hear-panel';
 import {
   BoldIcon,
   BulletListIcon,
@@ -48,55 +48,19 @@ import {
   FoldIcon,
   ItalicIcon,
   LockIcon,
-  LowercaseIcon,
   NumberedListIcon,
   PlainTextIcon,
-  ReadingIcon,
   RestoreIcon,
   StrikethroughIcon,
-  StructureIcon,
   UnderlineIcon,
-  UppercaseIcon,
   WarningIcon,
 } from './icons';
 import { toggleList } from './lists';
 import { Segmented } from './motion/segmented';
 import { PostPreview } from './post-preview';
+import { SelectionBubble } from './selection-bubble';
 import { inStyle, SPECIMENS } from './specimens';
-import { StylePanel } from './style-panel';
-
-const SAMPLE = [
-  'Unicode "bold" is not rich text.',
-  '',
-  'Select some words, pick a style, then copy the post into LinkedIn, X or Threads.',
-  'Screen readers may read styled letters as math symbols, so keep the plain copy handy.',
-].join('\n');
-
-const FAMILY_LABELS: Readonly<Record<Family, string>> = {
-  serif: 'Serif',
-  sans: 'Sans',
-  script: 'Script',
-  fraktur: 'Fraktur',
-  doublestruck: 'Double',
-  monospace: 'Mono',
-};
-
-/**
- * Each font button shows its name in its own alphabet, so the choice is seen
- * rather than read. Serif has no Mathematical alphabet of its own (it is the
- * default for bold and italic), so it is shown in the page's serif face.
- */
-const FAMILY_FACES: Readonly<Record<Family, string>> = {
-  serif: 'Serif',
-  sans: inStyle('Sans', specimenOf('sans')),
-  script: inStyle('Script', specimenOf('script')),
-  fraktur: inStyle('Fraktur', specimenOf('fraktur')),
-  doublestruck: inStyle('Double', specimenOf('doublestruck')),
-  monospace: inStyle('Mono', specimenOf('monospace')),
-};
-
-/** Below this, a Flesch–Kincaid grade swings too much to be worth showing. */
-const READING_MIN_WORDS = 20;
+import { StylePicker } from './style-picker';
 
 function specimenOf(id: string): (typeof SPECIMENS)[number] {
   const found = SPECIMENS.find((candidate) => candidate.id === id);
@@ -104,8 +68,23 @@ function specimenOf(id: string): (typeof SPECIMENS)[number] {
   return found;
 }
 
+/**
+ * The post "Try an example" loads: a little styling already in place, so the
+ * "Hear it" panel has something to read out on the first click.
+ */
+const EXAMPLE = [
+  `${inStyle('We’re hiring', specimenOf('sans_bold'))} a product designer.`,
+  '',
+  'Remote and full time. You would own the editor, from the first sketch to the release.',
+  '',
+  `${inStyle('Apply by Friday', specimenOf('sans_italic'))}, or send this to someone who should.`,
+].join('\n');
+
+/** Below this, a Flesch–Kincaid grade swings too much to be worth showing. */
+const READING_MIN_WORDS = 20;
+
 const count = (n: number, one: string, many: string): string =>
-  `${String(n)} ${n === 1 ? one : many}`;
+  `${number(n)} ${n === 1 ? one : many}`;
 
 const number = (n: number): string => n.toLocaleString('en-US');
 
@@ -129,12 +108,21 @@ const toSource = (value: string, start: number, end: number): Selection => ({
   end: normalize(value.slice(0, end)).length,
 });
 
+type View = 'hear' | 'plain' | 'feed';
+
 /**
- * Two panes over one document: the styled post you copy, and the plain text a
- * screen reader hears. Every edit goes through `applyEdit`, so the document tree
- * stays the source of truth; selections cross between output and source offsets
- * through provenance (spec §4.1), because styled letters are two UTF-16 units
- * and plain ones are one.
+ * One editor over one document, with what the post costs directly beneath it.
+ *
+ * Every edit goes through `applyEdit`, so the document tree stays the source of
+ * truth; selections cross between output and source offsets through provenance
+ * (spec §4.1), because styled letters are two UTF-16 units and plain ones are
+ * one.
+ *
+ * Styling acts on the selection, or on the whole post when nothing is
+ * selected, and the toolbar says which. Pointing at an alphabet previews it on
+ * the post, and everything below the editor — what a screen reader says, the
+ * length, the feed — follows the preview, so the cost of a style is seen
+ * before it is chosen.
  */
 export function Editor() {
   const id = useId();
@@ -145,21 +133,22 @@ export function Editor() {
    * tell it was about to happen. The prompt holds the saved text without
    * touching `doc` until the reader picks Restore or Start fresh, so it never
    * renders and is never overwritten by the autosave effect below while the
-   * choice is open. An explicitly emptied post (`''`, not `null`) is not a
-   * draft worth asking about — it loads back to empty exactly as before.
+   * choice is open.
    */
   const [pendingDraft, setPendingDraft] = useState<string | null>(() => {
     const saved = browserDrafts.load();
     return saved !== null && saved !== '' ? saved : null;
   });
-  const [doc, setDoc] = useState<Document>(() =>
-    fromText(browserDrafts.load() === '' ? '' : SAMPLE),
-  );
+  /*
+   * The editor opens empty. It used to open on a sample post, and a first
+   * click landed the caret in the middle of it, so the first thing typed was
+   * spliced into someone else's text. "Try an example" fills it on request.
+   */
+  const [doc, setDoc] = useState<Document>(() => fromText(''));
   /*
    * Whether anything has actually changed this session. Without this, the
-   * autosave effect below would write the untouched SAMPLE to storage on
-   * first mount, and the very next reload would offer to "restore" a draft
-   * the reader never wrote.
+   * autosave effect below would write the empty post to storage on first
+   * mount and wipe a draft the prompt is still offering.
    */
   const edited = useRef(false);
   const updateDoc = (next: Document) => {
@@ -168,17 +157,12 @@ export function Editor() {
   };
   const [target, setTarget] = useState<PlatformId>('linkedin');
   /*
-   * The right pane shows either the plain text or the feed preview.
-   *
-   * Plain text is the default, and deliberately so: showing the styled post
-   * beside the text a screen reader actually hears is the argument this app
-   * makes, and burying it behind a control would make that argument optional.
-   * The preview answers a different question — how the post will look — and is
-   * one click away (ADR 0009).
+   * Below the editor: what a screen reader may say, the plain text, or the feed
+   * preview. Hearing it is the default, because showing the cost beside the
+   * choice is the argument this app makes (ADR 0009 keeps the preview a click
+   * away).
    */
-  const [view, setView] = useState<'preview' | 'plain'>('plain');
-  const result = useMemo(() => render(doc), [doc]);
-  const plain = useMemo(() => sourceText(doc), [doc]);
+  const [view, setView] = useState<View>('hear');
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const pending = useRef<Selection | null>(null);
   const [status, setStatus] = useState('');
@@ -187,6 +171,49 @@ export function Editor() {
    * more freely when a mistake costs one click, not their post.
    */
   const [undo, setUndo] = useState<Document | null>(null);
+
+  const plain = useMemo(() => sourceText(doc), [doc]);
+  const collapsed = selection.start === selection.end;
+  /*
+   * What the styling controls act on: the selection, or the whole post when
+   * the caret is just sitting somewhere. Keyboard shortcuts keep acting only on
+   * a selection; Ctrl+B with nothing selected restyling a whole post would be a
+   * surprise, a click on a labelled button is not.
+   */
+  const scope = useMemo(
+    () => (collapsed ? { start: 0, end: plain.length } : selection),
+    [collapsed, plain, selection],
+  );
+
+  const result = useMemo(() => render(doc), [doc]);
+  const scopeRanges = useMemo(
+    () => rangesFromSource(result.layout, scope.start, scope.end),
+    [result, scope],
+  );
+  const [preview, setPreviewFamily] = useState<Family | null>(null);
+  /*
+   * A preview replaces the textarea's text, and a browser collapses the
+   * selection when a textarea's value changes. Queue the current selection
+   * for the layout effect below to put back, or the preview would widen
+   * itself to the whole post the moment it started.
+   */
+  const setPreview = useCallback(
+    (family: Family | null) => {
+      pending.current = selection;
+      setPreviewFamily(family);
+    },
+    [selection],
+  );
+  const previewDoc = useMemo(
+    () => (preview === null ? doc : setFamily(doc, scopeRanges, preview)),
+    [doc, preview, scopeRanges],
+  );
+  /** What the textarea and everything below it show: the post, or the post under a preview. */
+  const shown = useMemo(
+    () => (previewDoc === doc ? result : render(previewDoc)),
+    [doc, previewDoc, result],
+  );
+
   const destroy = (next: Document, message: string) => {
     setUndo(doc);
     updateDoc(next);
@@ -206,11 +233,8 @@ export function Editor() {
     const restore = pending.current;
     if (el === null || restore === null) return;
     pending.current = null;
-    el.setSelectionRange(
-      outputOffsetAt(result, restore.start),
-      outputOffsetAt(result, restore.end),
-    );
-  }, [result]);
+    el.setSelectionRange(outputOffsetAt(shown, restore.start), outputOffsetAt(shown, restore.end));
+  }, [shown]);
 
   useEffect(() => {
     if (pendingDraft !== null || !edited.current) return;
@@ -227,18 +251,33 @@ export function Editor() {
     setPendingDraft(null);
   };
 
+  /*
+   * The text the textarea shows, for mapping its offsets. A ref, updated before
+   * the browser can fire `selectionchange` for a new value: a listener holding
+   * the previous render's text mapped a preview's offsets through the wrong
+   * layout, widened the selection, and the preview then spread to the whole
+   * post.
+   */
+  const showing = useRef(shown);
+  useLayoutEffect(() => {
+    showing.current = shown;
+  }, [shown]);
+
   const readSelection = useCallback((): Selection | null => {
     const el = textarea.current;
     if (el === null) return null;
     return {
-      start: sourceOffsetAt(result, el.selectionStart),
-      end: sourceOffsetAt(result, el.selectionEnd),
+      start: sourceOffsetAt(showing.current, el.selectionStart),
+      end: sourceOffsetAt(showing.current, el.selectionEnd),
     };
-  }, [result]);
+  }, []);
 
   const syncSelection = useCallback(() => {
     const next = readSelection();
-    if (next !== null) setSelection(next);
+    if (next === null) return;
+    setSelection((current) =>
+      current.start === next.start && current.end === next.end ? current : next,
+    );
   }, [readSelection]);
 
   useEffect(() => {
@@ -248,23 +287,24 @@ export function Editor() {
     };
   }, [syncSelection]);
 
-  const ranges = useMemo(
-    () => rangesFromSource(result.layout, selection.start, selection.end),
-    [result, selection],
-  );
-  const state = useMemo(() => selectionState(doc, ranges), [doc, ranges]);
+  const state = useMemo(() => selectionState(doc, scopeRanges), [doc, scopeRanges]);
   const [onlyFamily] = state.families.size === 1 ? [...state.families] : [];
+  const nothingToStyle = state.families.size === 0;
 
   const platform = PLATFORMS[target];
-  const length = useMemo(() => budget(result.output, plain, platform), [result, plain, platform]);
-  const stats = useMemo(() => postStats(result.output), [result]);
+  const shownPlain = useMemo(() => sourceText(previewDoc), [previewDoc]);
+  const length = useMemo(
+    () => budget(shown.output, shownPlain, platform),
+    [shown, shownPlain, platform],
+  );
+  const stats = useMemo(() => postStats(shown.output), [shown]);
   const structure = useMemo(() => structureOf(doc), [doc]);
   const reading = useMemo(() => readability(plain), [plain]);
-  // Punctuation and emoji are never styled, which is expected; highlight only
+  // Punctuation and emoji are never styled, which is expected; flag only
   // letters and digits a font could not reach, which make the post look mixed.
   const gaps = useMemo(
-    () => coverageMarks(result).filter((mark) => mark.reason !== 'not_styleable'),
-    [result],
+    () => coverageMarks(shown).filter((mark) => mark.reason !== 'not_styleable'),
+    [shown],
   );
   /*
    * The preview card measures text in its own font, so it needs a measurer
@@ -286,14 +326,24 @@ export function Editor() {
     () =>
       measure === null || platform.fold === null
         ? null
-        : fold(result.output, platform.fold, measure),
-    [measure, platform, result],
+        : fold(shown.output, platform.fold, measure),
+    [measure, platform, shown],
   );
 
-  const change = (command: (current: Document, ranges: readonly TextRange[]) => Document) => {
+  /**
+   * Run a styling command on the scope: the selection, or with `whole` and no
+   * selection, the entire post. The caret or selection is put back afterwards.
+   */
+  const change = (
+    command: (current: Document, ranges: readonly TextRange[]) => Document,
+    whole: boolean,
+  ) => {
     const current = readSelection();
     if (current === null) return;
-    const next = command(doc, rangesFromSource(result.layout, current.start, current.end));
+    const target =
+      whole && current.start === current.end ? { start: 0, end: plain.length } : current;
+    const next = command(doc, rangesFromSource(result.layout, target.start, target.end));
+    setPreviewFamily(null);
     textarea.current?.focus();
     if (next === doc) return;
     setUndo(null);
@@ -311,12 +361,12 @@ export function Editor() {
     updateDoc(next);
   };
 
-  const emphasize = (emphasis: Emphasis) => {
-    change((current, selected) => toggleEmphasis(current, selected, emphasis));
+  const emphasize = (emphasis: Emphasis, whole = true) => {
+    change((current, selected) => toggleEmphasis(current, selected, emphasis), whole);
   };
 
   const decorate = (decoration: Decoration) => {
-    change((current, selected) => toggleDecoration(current, selected, decoration));
+    change((current, selected) => toggleDecoration(current, selected, decoration), true);
   };
 
   const list = (marker: ListMarker) => {
@@ -346,7 +396,7 @@ export function Editor() {
     const key = event.key.toLowerCase();
     if (key !== 'b' && key !== 'i') return;
     event.preventDefault();
-    emphasize(key === 'b' ? 'bold' : 'italic');
+    emphasize(key === 'b' ? 'bold' : 'italic', false);
   };
 
   const copy = async (text: string, what: string) => {
@@ -358,8 +408,91 @@ export function Editor() {
     }
   };
 
+  const loadExample = () => {
+    updateDoc(fromText(EXAMPLE));
+    setUndo(null);
+    setStatus('');
+    textarea.current?.focus();
+  };
+
+  const empty = result.output === '';
+  const scopeLabel = collapsed ? 'Whole post' : 'Selection';
+
+  /*
+   * The emphasis buttons, shared by the toolbar and the selection bar. The
+   * bar's copies are for the mouse only (see SelectionBubble), so they are
+   * taken out of the tab order there.
+   */
+  const emphasisButtons = (inBubble: boolean) => {
+    const tabIndex = inBubble ? -1 : undefined;
+    return (
+      <>
+        <button
+          type="button"
+          tabIndex={tabIndex}
+          title="Bold (Ctrl or ⌘ B)"
+          aria-pressed={state.bold === 'on'}
+          aria-keyshortcuts={inBubble ? undefined : 'Control+B Meta+B'}
+          disabled={!canEmphasize(state, 'bold')}
+          onClick={() => {
+            emphasize('bold');
+          }}
+        >
+          <BoldIcon />
+          <span className="visually-hidden">Bold</span>
+        </button>
+        <button
+          type="button"
+          tabIndex={tabIndex}
+          title="Italic (Ctrl or ⌘ I)"
+          aria-pressed={state.italic === 'on'}
+          aria-keyshortcuts={inBubble ? undefined : 'Control+I Meta+I'}
+          disabled={!canEmphasize(state, 'italic')}
+          onClick={() => {
+            emphasize('italic');
+          }}
+        >
+          <ItalicIcon />
+          <span className="visually-hidden">Italic</span>
+        </button>
+        {/*
+         * Never disabled for want of an alphabet: a combining mark composes
+         * with every one, unlike bold and italic.
+         */}
+        <button
+          type="button"
+          tabIndex={tabIndex}
+          title="Underline"
+          aria-pressed={state.underline === 'on'}
+          disabled={nothingToStyle}
+          onClick={() => {
+            decorate('underline');
+          }}
+        >
+          <UnderlineIcon />
+          <span className="visually-hidden">Underline</span>
+        </button>
+        <button
+          type="button"
+          tabIndex={tabIndex}
+          title="Strikethrough"
+          aria-pressed={state.strikethrough === 'on'}
+          disabled={nothingToStyle}
+          onClick={() => {
+            decorate('strikethrough');
+          }}
+        >
+          <StrikethroughIcon />
+          <span className="visually-hidden">Strikethrough</span>
+        </button>
+      </>
+    );
+  };
+
+  const styledCount = stats.styled + stats.decorated;
+
   return (
-    <section className="editor workspace">
+    <section className="studio" aria-label="Formatter">
       {pendingDraft !== null && (
         <div className="draft-prompt-scrim">
           <div
@@ -386,91 +519,37 @@ export function Editor() {
           </div>
         </div>
       )}
-      <div className="workspace-main" inert={pendingDraft !== null}>
-        <div className="card editor-card">
-          {/*
-           * One command bar, in the order a post is shaped: the alphabet, then
-           * emphasis, then structure, then case. Familiar controls are icons
-           * with their names in the accessible name and a tooltip; the font
-           * buttons show their own alphabet, so the choice is seen, not read.
-           * The two actions that undo work sit apart at the far end.
-           */}
-          <div className="toolbar">
-            <div role="group" aria-label="Font" className="group group-fonts">
-              {FAMILIES.map((family) => (
-                <button
-                  key={family}
-                  type="button"
-                  title={FAMILY_LABELS[family]}
-                  aria-pressed={onlyFamily === family}
-                  disabled={state.families.size === 0}
-                  onClick={() => {
-                    change((current, selected) => setFamily(current, selected, family));
-                  }}
-                >
-                  <span aria-hidden="true" className={`font-face font-${family}`}>
-                    {FAMILY_FACES[family]}
-                  </span>
-                  <span className="visually-hidden">{FAMILY_LABELS[family]}</span>
-                </button>
-              ))}
+
+      <div className="sheet" inert={pendingDraft !== null}>
+        {/*
+         * One command bar, in the order a post is shaped: the alphabet and its
+         * emphasis, which act on the scope named beside them, then structure
+         * and case, which act on the lines under the caret. The two actions
+         * that throw work away sit apart at the far end.
+         */}
+        <div className="toolbar">
+          <div className="toolbar-styles">
+            <StylePicker
+              current={onlyFamily}
+              disabled={nothingToStyle}
+              onPreview={setPreview}
+              onPick={(family) => {
+                change((current, selected) => setFamily(current, selected, family), true);
+              }}
+            />
+            <div
+              role="group"
+              aria-label="Emphasis"
+              aria-describedby={`${id}-scope`}
+              className="group"
+            >
+              {emphasisButtons(false)}
             </div>
-            <div role="group" aria-label="Emphasis" className="group">
-              <button
-                type="button"
-                title="Bold (Ctrl or ⌘ B)"
-                aria-pressed={state.bold === 'on'}
-                aria-keyshortcuts="Control+B Meta+B"
-                disabled={!canEmphasize(state, 'bold')}
-                onClick={() => {
-                  emphasize('bold');
-                }}
-              >
-                <BoldIcon />
-                <span className="visually-hidden">Bold</span>
-              </button>
-              <button
-                type="button"
-                title="Italic (Ctrl or ⌘ I)"
-                aria-pressed={state.italic === 'on'}
-                aria-keyshortcuts="Control+I Meta+I"
-                disabled={!canEmphasize(state, 'italic')}
-                onClick={() => {
-                  emphasize('italic');
-                }}
-              >
-                <ItalicIcon />
-                <span className="visually-hidden">Italic</span>
-              </button>
-              {/*
-               * Never disabled for want of an alphabet: a combining mark composes
-               * with every one, unlike bold and italic.
-               */}
-              <button
-                type="button"
-                title="Underline"
-                aria-pressed={state.underline === 'on'}
-                disabled={state.families.size === 0}
-                onClick={() => {
-                  decorate('underline');
-                }}
-              >
-                <UnderlineIcon />
-                <span className="visually-hidden">Underline</span>
-              </button>
-              <button
-                type="button"
-                title="Strikethrough"
-                aria-pressed={state.strikethrough === 'on'}
-                disabled={state.families.size === 0}
-                onClick={() => {
-                  decorate('strikethrough');
-                }}
-              >
-                <StrikethroughIcon />
-                <span className="visually-hidden">Strikethrough</span>
-              </button>
-            </div>
+            <span id={`${id}-scope`} className="scope" data-scope={collapsed ? 'all' : 'some'}>
+              {scopeLabel}
+            </span>
+          </div>
+          <div className="toolbar-text">
             <div role="group" aria-label="Lists" className="group">
               <button
                 type="button"
@@ -504,10 +583,10 @@ export function Editor() {
               </button>
             </div>
             {/*
-             * Apart from the styles: these change the words, and the plain pane
-             * changes with them. Nothing else in this bar does.
+             * Case changes the words, not their dress, so the plain text changes
+             * with it. The labels show the result in the page's own letters.
              */}
-            <div role="group" aria-label="Case" className="group">
+            <div role="group" aria-label="Case" className="group group-case">
               <button
                 type="button"
                 title="Uppercase"
@@ -515,7 +594,7 @@ export function Editor() {
                   transformCase('upper');
                 }}
               >
-                <UppercaseIcon />
+                <span aria-hidden="true">AB</span>
                 <span className="visually-hidden">Uppercase</span>
               </button>
               <button
@@ -525,169 +604,289 @@ export function Editor() {
                   transformCase('lower');
                 }}
               >
-                <LowercaseIcon />
+                <span aria-hidden="true">ab</span>
                 <span className="visually-hidden">Lowercase</span>
               </button>
             </div>
-            <div role="group" aria-label="Reset" className="group group-reset">
-              <button
-                type="button"
-                title="Restore accessible text (remove all styling)"
-                onClick={() => {
-                  destroy(clearStyles(doc), 'All styling removed.');
-                }}
-              >
-                <RestoreIcon />
-                <span className="visually-hidden">Restore accessible text</span>
-              </button>
-              <button
-                type="button"
-                className="danger"
-                title="Clear post"
-                onClick={() => {
-                  destroy(fromText(''), 'Post cleared.');
-                  textarea.current?.focus();
-                }}
-              >
-                <ClearIcon />
-                <span className="visually-hidden">Clear post</span>
-              </button>
-            </div>
+          </div>
+          <div role="group" aria-label="Reset" className="group group-reset">
+            <button
+              type="button"
+              title="Remove all styling, keep the words"
+              disabled={styledCount === 0}
+              onClick={() => {
+                destroy(clearStyles(doc), 'All styling removed.');
+              }}
+            >
+              <RestoreIcon />
+              <span className="visually-hidden">Remove styling</span>
+            </button>
+            <button
+              type="button"
+              className="danger"
+              title="Clear post"
+              disabled={empty}
+              onClick={() => {
+                destroy(fromText(''), 'Post cleared.');
+                textarea.current?.focus();
+              }}
+            >
+              <ClearIcon />
+              <span className="visually-hidden">Clear post</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="compose">
+          <label htmlFor={`${id}-post`} className="visually-hidden">
+            Post
+          </label>
+          <textarea
+            id={`${id}-post`}
+            ref={textarea}
+            rows={8}
+            spellCheck
+            readOnly={preview !== null}
+            data-previewing={preview !== null}
+            placeholder="Write or paste your post. Select words to style them."
+            aria-describedby={`${id}-hint`}
+            value={shown.output}
+            onKeyDown={onKeyDown}
+            onSelect={syncSelection}
+            onChange={(event) => {
+              const el = event.target;
+              edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
+            }}
+          />
+          {empty && (
+            <button type="button" className="try-example" onClick={loadExample}>
+              Try an example
+            </button>
+          )}
+          <SelectionBubble
+            textarea={textarea}
+            revision={`${String(selection.start)}:${String(selection.end)}:${shown.output}`}
+            hidden={preview !== null || pendingDraft !== null}
+          >
+            {emphasisButtons(true)}
+          </SelectionBubble>
+        </div>
+
+        {/*
+         * The cost of the post, under the post. The budget sits on the same
+         * line as the target it is counted for.
+         */}
+        <div className="measure">
+          <Segmented
+            label="Target"
+            className="targets"
+            options={PLATFORM_LIST.map((option) => ({ id: option.id, label: option.label }))}
+            value={target}
+            onChange={(next) => {
+              const found = PLATFORM_LIST.find((option) => option.id === next);
+              if (found) setTarget(found.id);
+            }}
+          />
+          {/*
+           * A group, not a live region: this count changes on every keystroke,
+           * and announcing it each time would talk over what is being typed.
+           * The copy confirmation below is the one thing worth announcing.
+           */}
+          <p className={length.over ? 'budget over' : 'budget'} role="group" aria-label="Length">
+            <span className="budget-count">
+              {platform.limit === null
+                ? count(length.used, 'character', 'characters')
+                : `${number(length.used)} of ${number(platform.limit)}${length.over ? ' — over the limit' : ''}`}
+            </span>
+            {platform.limit !== null && (
+              <span className="meter" aria-hidden="true">
+                <span
+                  className="meter-fill"
+                  style={{ transform: `scaleX(${String(Math.min(1, length.fraction ?? 0))})` }}
+                />
+              </span>
+            )}
+            {length.styleCost > 0 && (
+              <span className="budget-cost">styling adds {number(length.styleCost)}</span>
+            )}
+          </p>
+        </div>
+
+        <section className="listen" aria-labelledby={`${id}-checks`}>
+          <div className="listen-head">
+            <h2 id={`${id}-checks`} className="listen-title">
+              Checks
+            </h2>
+            <Segmented
+              label="Output view"
+              className="views"
+              options={[
+                { id: 'hear', label: 'Hear it' },
+                { id: 'plain', label: 'Plain text' },
+                { id: 'feed', label: 'Feed preview' },
+              ]}
+              value={view}
+              onChange={(next) => {
+                setView(next === 'plain' || next === 'feed' ? next : 'hear');
+              }}
+            />
           </div>
 
-          <div className="panes">
-            <div className="pane">
-              <div className="pane-head">
-                <label htmlFor={`${id}-post`}>Post</label>
-                <span className="pane-hint">what readers see</span>
-              </div>
-              <textarea
-                id={`${id}-post`}
-                ref={textarea}
-                rows={12}
-                spellCheck
-                aria-describedby={`${id}-hint`}
-                value={result.output}
-                onKeyDown={onKeyDown}
-                onSelect={syncSelection}
-                onChange={(event) => {
-                  const el = event.target;
-                  edit(el.value, toSource(el.value, el.selectionStart, el.selectionEnd));
-                }}
-              />
-            </div>
-            <div className="pane pane-side">
-              <div className="pane-head">
-                {view === 'plain' ? (
-                  <label htmlFor={`${id}-plain`}>
-                    Plain text <span className="pane-hint">what a screen reader hears</span>
-                  </label>
-                ) : (
-                  <p className="pane-title">
-                    Preview <span className="pane-hint">how the feed would lay it out</span>
+          {view === 'hear' &&
+            (empty ? (
+              <p className="listen-note">
+                Your post will appear here the way a screen reader may read it out.
+              </p>
+            ) : styledCount === 0 ? (
+              <p className="listen-note ok">
+                <CheckIcon />
+                <span>
+                  No styled letters, so a screen reader reads your post exactly as written.
+                </span>
+              </p>
+            ) : (
+              <>
+                <HearPanel output={shown.output} />
+                {stats.styled > 0 && (
+                  <p className="listen-note warn">
+                    <WarningIcon />
+                    <span>
+                      {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may
+                      read each one as a math symbol, as above, or skip it. Keep the words that
+                      matter most plain.
+                    </span>
                   </p>
                 )}
-                <Segmented
-                  label="Right pane view"
-                  className="pane-views"
-                  options={[
-                    { id: 'plain', label: 'Plain text' },
-                    { id: 'preview', label: 'Preview' },
-                  ]}
-                  value={view}
-                  onChange={(next) => {
-                    setView(next === 'preview' ? 'preview' : 'plain');
-                  }}
-                />
-              </div>
-              {view === 'plain' ? (
-                <textarea id={`${id}-plain`} rows={12} readOnly tabIndex={-1} value={plain} />
-              ) : (
-                <PostPreview text={result.output} platform={platform} measureFor={measureFor} />
-              )}
-            </div>
-          </div>
+                {/*
+                 * Counted separately from substituted letters, because the two
+                 * fail differently: a reader that folds mathematical
+                 * alphanumerics back to ASCII still meets the combining mark
+                 * (ADR 0010).
+                 */}
+                {stats.decorated > 0 && (
+                  <p className="listen-note warn">
+                    <WarningIcon />
+                    <span>
+                      {count(
+                        stats.decorated,
+                        'underlined or struck letter',
+                        'underlined or struck letters',
+                      )}
+                      . Each is a plain letter plus a combining mark, so it costs two characters and
+                      a screen reader may announce the mark or split it from its letter.
+                    </span>
+                  </p>
+                )}
+              </>
+            ))}
 
-          {/*
-           * The status bar: where the post is going, how much of it is left,
-           * and the one thing to do next. Copy styled is the primary action,
-           * last and filled, as a confirming action sits on its platform.
-           */}
-          <div className="statusbar">
-            <div className="statusbar-target">
-              <span className="targets-label mono" aria-hidden="true">
-                Writing for
-              </span>
-              <Segmented
-                label="Target"
-                className="targets"
-                options={PLATFORM_LIST.map((option) => ({ id: option.id, label: option.label }))}
-                value={target}
-                onChange={(next) => {
-                  const found = PLATFORM_LIST.find((option) => option.id === next);
-                  if (found) setTarget(found.id);
-                }}
-              />
-            </div>
-            {/*
-             * A group, not a live region: this count changes on every keystroke,
-             * and announcing it each time would talk over what is being typed.
-             * The copy confirmation below is the one thing worth announcing.
-             */}
-            <p className={length.over ? 'budget over' : 'budget'} role="group" aria-label="Length">
-              <span className="budget-count">
-                {platform.limit === null
-                  ? `${number(length.used)} characters`
-                  : `${number(length.used)} of ${number(platform.limit)}${length.over ? ' — over the limit' : ''}`}
-              </span>
-              {platform.limit !== null && (
-                <span className="meter" aria-hidden="true">
-                  <span
-                    className="meter-fill"
-                    style={{ transform: `scaleX(${String(Math.min(1, length.fraction ?? 0))})` }}
-                  />
+          {view === 'plain' && (
+            <>
+              <label htmlFor={`${id}-plain`} className="visually-hidden">
+                Plain text
+              </label>
+              <textarea id={`${id}-plain`} className="plain" rows={6} readOnly value={shownPlain} />
+            </>
+          )}
+
+          {view === 'feed' && (
+            <PostPreview text={shown.output} platform={platform} measureFor={measureFor} />
+          )}
+
+          {gaps.length > 0 && (
+            <>
+              <p className="listen-note">
+                <WarningIcon />
+                <span>
+                  {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
+                  {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
+                  {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
                 </span>
-              )}
-              {length.styleCost > 0 && (
-                <span className="budget-cost">styling adds {number(length.styleCost)}</span>
-              )}
-            </p>
-          </div>
+              </p>
+              {/* A visual aid; the sentence above already says the same thing. */}
+              <pre className="gaps" aria-hidden="true">
+                {segments(shown.output, gaps).map((segment, index) =>
+                  segment.mark === null ? (
+                    <span key={index}>{segment.text}</span>
+                  ) : (
+                    <mark key={index}>{segment.text}</mark>
+                  ),
+                )}
+              </pre>
+            </>
+          )}
 
-          <div className="editor-foot">
-            <p id={`${id}-hint`} className="hint">
-              {platform.note}
-              {platform.confidence === 'assumed' &&
-                ' Counting behaviour here is assumed, not tested.'}{' '}
-              Select text to style it; Ctrl or ⌘ with B or I toggles bold and italic.
-            </p>
-            <p className="saved">
-              <LockIcon />
-              Your draft is saved in this browser and never sent anywhere.
-            </p>
-            <div role="group" aria-label="Copy" className="actions">
-              <button
-                type="button"
-                onClick={() => {
-                  void copy(plain, 'plain text');
-                }}
-              >
-                <PlainTextIcon />
-                Copy plain text
-              </button>
-              <button
-                type="button"
-                className="primary"
-                onClick={() => {
-                  void copy(result.output, 'the styled post');
-                }}
-              >
-                <CopyIcon />
-                Copy styled
-              </button>
-            </div>
+          {folded !== null && (
+            <>
+              <h3 className="fold-title">
+                <FoldIcon />
+                Before “…see more”
+              </h3>
+              <p className="hint">
+                An unmeasured estimate for {platform.label}. It only appears in preview builds until
+                the real fold rule is measured.
+              </p>
+              <pre className="gaps fold">
+                {folded.visible}
+                {folded.truncated && <span className="ellipsis">{FEED_ESTIMATE.ellipsis}</span>}
+              </pre>
+            </>
+          )}
+
+          {!empty && (
+            <>
+              <ul className="stats">
+                <li>{count(stats.characters, 'character', 'characters')}</li>
+                <li>{count(stats.words, 'word', 'words')}</li>
+                <li>{count(stats.lines, 'line', 'lines')}</li>
+              </ul>
+              <p className="facts">
+                Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
+                {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
+                {structure.link && ' · ends with a link'}
+              </p>
+              <p className="facts">
+                {reading.grade === null || reading.words < READING_MIN_WORDS
+                  ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
+                  : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
+              </p>
+            </>
+          )}
+        </section>
+
+        <div className="dock">
+          <p id={`${id}-hint`} className="hint">
+            {platform.note}
+            {platform.confidence === 'assumed' && ' This count is assumed, not tested.'}
+          </p>
+          <div role="group" aria-label="Copy" className="actions">
+            <button
+              type="button"
+              disabled={empty}
+              onClick={() => {
+                void copy(plain, 'plain text');
+              }}
+            >
+              <PlainTextIcon />
+              Copy plain text
+            </button>
+            <button
+              type="button"
+              className="primary"
+              disabled={empty}
+              onClick={() => {
+                void copy(result.output, 'the styled post');
+              }}
+            >
+              <CopyIcon />
+              Copy styled
+            </button>
           </div>
           <div className="status-row">
+            <p className="saved">
+              <LockIcon />
+              Saved in this browser only. Nothing you type is sent anywhere.
+            </p>
             <p role="status" className="status">
               {status}
             </p>
@@ -698,137 +897,7 @@ export function Editor() {
             )}
           </div>
         </div>
-
-        {/*
-         * The toolbar styles a selection; this styles the whole post. Rendered
-         * from the plain source, so picking one specimen after another never
-         * compounds the styling.
-         */}
-        <section aria-labelledby={`${id}-styles`} className="card styles-card">
-          <div className="card-head">
-            <h2 id={`${id}-styles`}>Every style</h2>
-            <p className="hint">
-              The whole post in one alphabet, without selecting anything. The plain text is
-              untouched.
-            </p>
-          </div>
-          <StylePanel
-            text={plain}
-            onCopy={(styled, what) => {
-              void copy(styled, what);
-            }}
-          />
-        </section>
       </div>
-
-      <aside className="workspace-rail" inert={pendingDraft !== null}>
-        <section aria-labelledby={`${id}-checks`} className="card checks">
-          <h2 id={`${id}-checks`}>Checks</h2>
-          <ul className="stats">
-            <li>
-              <strong>{number(stats.characters)}</strong>{' '}
-              {stats.characters === 1 ? 'character' : 'characters'}
-            </li>
-            <li>
-              <strong>{number(stats.words)}</strong> {stats.words === 1 ? 'word' : 'words'}
-            </li>
-            <li>
-              <strong>{number(stats.lines)}</strong> {stats.lines === 1 ? 'line' : 'lines'}
-            </li>
-          </ul>
-          <p className="check">
-            <StructureIcon />
-            <span>
-              Structure: {count(structure.openingLines, 'opening line', 'opening lines')}
-              {structure.lists > 0 && ` · ${count(structure.lists, 'list', 'lists')}`}
-              {structure.link && ' · ends with a link'}
-            </span>
-          </p>
-          <p className="check">
-            <ReadingIcon />
-            <span>
-              {reading.grade === null || reading.words < READING_MIN_WORDS
-                ? `Reading grade: add at least ${String(READING_MIN_WORDS)} words for an estimate.`
-                : `Reading grade ${Math.max(0, reading.grade).toFixed(1)} (Flesch–Kincaid; an estimate for English text).`}
-            </span>
-          </p>
-          {/*
-           * Counted and warned about separately from substituted letters, because
-           * the two fail differently: a reader that folds mathematical
-           * alphanumerics back to ASCII still meets the combining mark (ADR 0010).
-           */}
-          {stats.decorated > 0 && (
-            <p className="check notice">
-              <WarningIcon />
-              <span>
-                {count(
-                  stats.decorated,
-                  'underlined or struck letter',
-                  'underlined or struck letters',
-                )}
-                . These are a plain letter plus a combining mark, so each one costs two characters
-                and a screen reader may announce the mark or split it from its letter. They are the
-                riskiest styling here.
-              </span>
-            </p>
-          )}
-          {stats.styled > 0 ? (
-            <p className="check notice">
-              <WarningIcon />
-              <span>
-                {count(stats.styled, 'styled letter', 'styled letters')}. Screen readers may read
-                each one as a math symbol, such as “mathematical bold capital A”, or skip it. Keep
-                the words that matter most plain.
-              </span>
-            </p>
-          ) : (
-            <p className="check">
-              <CheckIcon />
-              <span>
-                No styled letters, so nothing here depends on how a screen reader handles them.
-              </span>
-            </p>
-          )}
-          {gaps.length > 0 && (
-            <>
-              <p className="check">
-                <WarningIcon />
-                <span>
-                  {count(gaps.length, 'character stays', 'characters stay')} plain because{' '}
-                  {gaps.length === 1 ? 'its' : 'their'} font has no styled form:{' '}
-                  {[...new Set(gaps.map((gap) => `“${gap.text}”`))].join(', ')}
-                </span>
-              </p>
-              {/* A visual aid; the sentence above already says the same thing. */}
-              <pre className="preview" aria-hidden="true">
-                {segments(result.output, gaps).map((segment, index) =>
-                  segment.mark === null ? (
-                    <span key={index}>{segment.text}</span>
-                  ) : (
-                    <mark key={index}>{segment.text}</mark>
-                  ),
-                )}
-              </pre>
-            </>
-          )}
-          {folded !== null && (
-            <>
-              <h3>
-                <FoldIcon />
-                Before “…see more”
-              </h3>
-              <p className="hint">
-                An unmeasured estimate for {platform.label}. It only appears in preview builds until
-                the real fold rule is measured.
-              </p>
-              <pre className="preview fold">
-                {folded.visible}
-                {folded.truncated && <span className="ellipsis">{FEED_ESTIMATE.ellipsis}</span>}
-              </pre>
-            </>
-          )}
-        </section>
-      </aside>
     </section>
   );
 }

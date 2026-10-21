@@ -3,7 +3,7 @@
 
 import { expect, test } from '@playwright/test';
 
-import { select } from './helpers';
+import { plainText, select } from './helpers';
 
 let errors: string[] = [];
 
@@ -49,7 +49,7 @@ test('recases the whole post when nothing is selected', async ({ page }) => {
 test('changes the plain text too, unlike every style', async ({ page }) => {
   /*
    * Case is a transform, not a style: it rewrites the post itself, so the plain
-   * pane follows it. Every other control in this toolbar leaves the plain text
+   * text follows it. Every other control in this toolbar leaves the plain text
    * exactly as it was.
    */
   const post = page.getByLabel('Post');
@@ -57,7 +57,7 @@ test('changes the plain text too, unlike every style', async ({ page }) => {
   await select(post, 0, 0);
   await caseGroup(page).getByRole('button', { name: 'Uppercase' }).click();
 
-  await expect(page.getByLabel('Plain text')).toHaveValue('QUIET WORDS');
+  await expect(await plainText(page)).toHaveValue('QUIET WORDS');
 });
 
 test('leaves styled letters alone while recasing around them', async ({ page }) => {
@@ -72,5 +72,5 @@ test('leaves styled letters alone while recasing around them', async ({ page }) 
 
   // The styled word keeps its letters; only the plain word is recased.
   await expect(post).toHaveValue(styled.replace('plain', 'PLAIN'));
-  await expect(page.getByLabel('Plain text')).toHaveValue('bold PLAIN');
+  await expect(await plainText(page)).toHaveValue('bold PLAIN');
 });

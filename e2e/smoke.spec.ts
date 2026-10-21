@@ -4,6 +4,8 @@
 import { expect, test } from '@playwright/test';
 import type { Locator } from '@playwright/test';
 
+import { SAMPLE, alphabet, pickFamily } from './helpers';
+
 /** Select a UTF-16 range in the textarea and let the editor see the change. */
 async function select(post: Locator, start: number, end: number): Promise<void> {
   await post.evaluate(
@@ -28,6 +30,7 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto('/format');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByLabel('Post').fill(SAMPLE);
 });
 
 test.afterEach(() => {
@@ -54,7 +57,7 @@ test('styles a selection and restores accessible text', async ({ page }) => {
 
   await bold.click();
   await expect(post).toHaveValue(styled);
-  await page.getByRole('button', { name: 'Restore accessible text' }).click();
+  await page.getByRole('button', { name: 'Remove styling' }).click();
   await expect(post).toHaveValue(plain);
 });
 
@@ -65,35 +68,32 @@ test('fonts disable the emphasis Unicode does not have', async ({ page }) => {
   const italic = page.getByRole('button', { name: 'Italic' });
   await select(post, 0, 'Unicode'.length);
 
-  await page.getByRole('button', { name: 'Mono' }).click();
-  await expect(page.getByRole('button', { name: 'Mono' })).toHaveAttribute('aria-pressed', 'true');
+  await pickFamily(page, 'Monospace');
+  await expect(alphabet(page, 'Monospace')).toBeVisible();
   await expect(bold).toBeDisabled();
   await expect(italic).toBeDisabled();
 
-  await page.getByRole('button', { name: 'Script' }).click();
+  await pickFamily(page, 'Script');
   await expect(bold).toBeEnabled();
   await expect(italic).toBeDisabled();
 
   // Fraktur has a bold form in Unicode but no italic one, like script.
-  await page.getByRole('button', { name: 'Fraktur' }).click();
-  await expect(page.getByRole('button', { name: 'Fraktur' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await pickFamily(page, 'Fraktur');
+  await expect(alphabet(page, 'Fraktur')).toBeVisible();
   await expect(bold).toBeEnabled();
   await expect(italic).toBeDisabled();
 
   // Double-struck has neither, like monospace.
-  await page.getByRole('button', { name: 'Double' }).click();
+  await pickFamily(page, 'Double-struck');
   await expect(bold).toBeDisabled();
   await expect(italic).toBeDisabled();
 
-  await page.getByRole('button', { name: 'Sans' }).click();
+  await pickFamily(page, 'Sans');
   await italic.click();
   expect((await post.inputValue()).normalize('NFKC')).toBe(plain);
   await expect(italic).toHaveAttribute('aria-pressed', 'true');
 
-  await page.getByRole('button', { name: 'Serif' }).click();
+  await pickFamily(page, 'Serif');
   await italic.click();
   await expect(post).toHaveValue(plain);
 });
@@ -116,7 +116,7 @@ test('underline and strikethrough work on any font, and are called out', async (
    * neither control is ever disabled — not even on monospace, which Unicode
    * gives no bold or italic form (ADR 0010).
    */
-  await page.getByRole('button', { name: 'Mono' }).click();
+  await pickFamily(page, 'Monospace');
   await expect(underline).toBeEnabled();
   await expect(strikethrough).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Bold' })).toBeDisabled();

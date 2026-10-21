@@ -3,7 +3,7 @@
 
 import { expect, test } from '@playwright/test';
 
-import { select } from './helpers';
+import { plainText, select } from './helpers';
 
 let errors: string[] = [];
 
@@ -21,16 +21,16 @@ test.afterEach(() => {
   expect(errors).toEqual([]);
 });
 
-test('the plain pane mirrors the styled post without the styling', async ({ page }) => {
+test('the plain text mirrors the styled post without the styling', async ({ page }) => {
   const post = page.getByLabel('Post');
-  const plain = page.getByLabel('Plain text');
+  const plain = await plainText(page);
   await post.fill('Top 3 tips');
   await expect(plain).toHaveValue('Top 3 tips');
 
   await select(post, 0, 'Top'.length);
   await page.getByRole('button', { name: 'Bold' }).click();
   await expect(post).not.toHaveValue('Top 3 tips');
-  // The styled pane changed; the plain pane is what a screen reader hears.
+  // The post changed; the plain text is what a screen reader reads without it.
   await expect(plain).toHaveValue('Top 3 tips');
 });
 

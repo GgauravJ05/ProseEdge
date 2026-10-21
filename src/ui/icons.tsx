@@ -275,3 +275,21 @@ export function LockIcon() {
     </Icon>
   );
 }
+
+export function ChevronIcon() {
+  return (
+    <Icon>
+      <path d="m7 10 5 5 5-5" />
+    </Icon>
+  );
+}
+
+export function SpeakerIcon() {
+  return (
+    <Icon>
+      <path d="M11 5 6 9H3v6h3l5 4z" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+    </Icon>
+  );
+}
