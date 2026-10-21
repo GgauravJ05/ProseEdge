@@ -19,6 +19,7 @@ accepted; a changed decision gets a new record that supersedes the old one.
 | [0011](0011-split-boundaries-over-the-full-history.md)    | Split boundaries over the full Hacker News history                 | Accepted                                                     |
 | [0012](0012-public-repository.md)                         | Public repository again                                            | Accepted                                                     |
 | [0013](0013-visual-design-v2.md)                          | Visual design v2: cool paper, one orange accent, restrained motion | Accepted                                                     |
+| [0014](0014-formatter-write-and-hear.md)                  | The formatter as one sheet: write, then hear what it costs         | Accepted                                                     |
 
 New record: copy the section headings of the latest one, take the next number,
 and open it in the same PR as the change it justifies.
