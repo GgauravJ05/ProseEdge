@@ -80,7 +80,7 @@ test.describe('touch devices', () => {
         () => document.querySelectorAll('button, [role="slider"], a[href], input').length,
       );
       // A floor, so the test cannot pass by finding nothing to measure.
-      expect(measured).toBeGreaterThan(path === '/format' ? 40 : 15);
+      expect(measured).toBeGreaterThan(path === '/format' ? 25 : 15);
 
       const small = await page.evaluate(() => {
         const targets = [
@@ -108,22 +108,19 @@ test.describe('touch devices', () => {
     });
   }
 
-  test('the panes stack instead of sitting side by side', async ({ page }) => {
+  test('the checks sit under the editor, full width', async ({ page }) => {
     await page.goto('/format');
     const post = await page.getByLabel('Post').boundingBox();
-    const plain = await page.getByLabel('Plain text').boundingBox();
-    expect(post).not.toBeNull();
-    expect(plain).not.toBeNull();
-    // Stacked: the plain pane starts below the styled one.
-    expect(plain?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0) - 1);
+    const checks = await page.getByRole('region', { name: 'Checks' }).boundingBox();
+    expect(checks?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0) - 1);
   });
 });
 
-test('the panes sit side by side on a wide screen', async ({ page }) => {
+test('the checks sit under the editor on a wide screen too, not beside it', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/format');
   const post = await page.getByLabel('Post').boundingBox();
-  const plain = await page.getByLabel('Plain text').boundingBox();
-  expect(Math.abs((post?.y ?? 0) - (plain?.y ?? 0))).toBeLessThan(4);
-  expect(plain?.x ?? 0).toBeGreaterThan((post?.x ?? 0) + (post?.width ?? 0) - 1);
+  const checks = await page.getByRole('region', { name: 'Checks' }).boundingBox();
+  expect(checks?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0) - 1);
+  expect(Math.abs((checks?.x ?? 0) - (post?.x ?? 0))).toBeLessThan(40);
 });

@@ -3,7 +3,7 @@
 
 import { expect, test } from '@playwright/test';
 
-import { select, selectAll } from './helpers';
+import { SAMPLE, pickFamily, select, selectAll } from './helpers';
 
 let errors: string[] = [];
 
@@ -39,18 +39,19 @@ test('shows which characters a font leaves plain', async ({ page }) => {
   const checks = page.getByRole('region', { name: 'Checks' });
   await post.fill('Top 3 tips');
   await selectAll(post);
-  await page.getByRole('button', { name: 'Script' }).click();
+  await pickFamily(page, 'Script');
   await expect(checks).toContainText(
     '1 character stays plain because its font has no styled form: “3”',
   );
   await expect(checks.locator('mark')).toHaveText(['3']);
 
-  await page.getByRole('button', { name: 'Sans' }).click();
+  await pickFamily(page, 'Sans');
   await expect(checks.locator('mark')).toHaveCount(0);
 });
 
 test('offers the draft across a reload, including an emptied post', async ({ page }) => {
   const post = page.getByLabel('Post');
+  await post.fill(SAMPLE);
   await select(post, 0, 'Unicode'.length);
   await page.getByRole('button', { name: 'Bold' }).click();
   const styled = await post.inputValue();

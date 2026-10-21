@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { select } from './helpers';
+import { pickFamily, select } from './helpers';
 
 // WCAG 2.2 A and AA rules. A formatter that warns about accessibility has to pass them itself.
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -72,7 +72,7 @@ test('the checks panel passes the scan with a warning and highlights showing', a
   const post = page.getByLabel('Post');
   await post.fill('Top 3 tips');
   await select(post, 0, 'Top 3 tips'.length);
-  await page.getByRole('button', { name: 'Script' }).click();
+  await pickFamily(page, 'Script');
   await expect(page.locator('mark')).toHaveCount(1);
   expect(await violations(page)).toEqual([]);
 });
@@ -87,8 +87,8 @@ test('the post preview passes the scan, in both themes', async ({ page }) => {
   await page.goto('/format');
   await page.getByLabel('Post').fill('A post worth previewing, with a second line to wrap.');
   await page
-    .getByRole('group', { name: 'Right pane view' })
-    .getByRole('button', { name: 'Preview' })
+    .getByRole('group', { name: 'Output view' })
+    .getByRole('button', { name: 'Feed preview' })
     .click();
   await expect(page.locator('.preview-card')).toBeVisible();
   expect(await violations(page)).toEqual([]);

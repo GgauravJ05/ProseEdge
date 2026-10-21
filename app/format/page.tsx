@@ -10,7 +10,7 @@ import '../formatter.css';
 export const metadata: Metadata = {
   title: 'Formatter',
   description:
-    'Style a post for LinkedIn, X, Instagram or Threads, and see the plain text a screen reader hears beside it.',
+    'Style a post for LinkedIn, X, Instagram or Threads, and hear what a screen reader may say before you copy it out.',
   alternates: { canonical: '/format' },
 };
 
@@ -18,9 +18,10 @@ export default function Format() {
   return (
     <main className="format-page">
       <header className="format-head">
-        <h1>Style a post without losing the plain text</h1>
+        <h1>Style a post, and hear what it costs</h1>
         <p className="lede">
-          Select words, pick a style, copy. What a screen reader hears stays beside it.
+          Bold and italic letters on LinkedIn, X and Threads are Unicode symbols. Style your post
+          here and see what a screen reader may say before you copy it out.
         </p>
       </header>
       <ClientEditor />

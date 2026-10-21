@@ -1,127 +1,231 @@
 /*
- * The formatter's workspace, shaped by Apple's design principles:
+ * The formatter: one sheet, written top to bottom in the order a post is made.
  *
- * - Keep focused, stay out of the way: a short header, then the editor. The
- *   post is the content; every control defers to it.
- * - Establish hierarchy: one command bar in the order a post is shaped, one
- *   surface for the two panes, one filled primary action (Copy styled).
- * - Familiar, consistent: B / I / U / S and list glyphs everyone knows, font
- *   buttons drawn in their own alphabet, the same segmented control the
- *   landing page uses for every either/or choice.
- * - Clear feedback: a pressed style is filled, the meter moves, a copy says
- *   so on the button that did it.
- * - Recover from mistakes: Clear post and Restore accessible text can be
- *   undone (editor.tsx).
- * - Responsibility: "saved in this browser, never sent" sits beside the
- *   controls, not only on the privacy page.
+ *   toolbar   the alphabet and its emphasis, acting on the scope named beside
+ *             them (the selection, or the whole post); then lists and case
+ *   compose   the post itself, the only large type on the page
+ *   measure   where it is going and how much of the limit it uses
+ *   checks    what a screen reader may say, the plain text, or the feed
+ *   dock      copy it out
  *
- * Corners are concentric: an inner radius is its container's radius minus the
- * padding between them. Every rule is scoped to `.workspace` or
- * `.format-page`, so nothing here reaches another page.
+ * It replaces a three-column workspace of nested cards, where the plain-text
+ * pane repeated the post word for word until something was styled, and a grid
+ * of fourteen copy cards repeated it again. The cost of styling now sits under
+ * the words it applies to, and appears only when there is a cost.
+ *
+ * Every rule is scoped to `.format-page` or `.studio`, so nothing here reaches
+ * another page. Corners are concentric: an inner radius is its container's
+ * radius minus the padding between them.
  */
 
 .format-page {
-  max-width: 76rem;
-  padding-block: 1.25rem 4rem;
+  max-width: 56rem;
+  padding-block: 1.5rem 4rem;
+}
+
+/* The header links to this page; on this page that link goes nowhere. */
+body:has(.format-page) .nav-cta {
+  display: none;
+}
+
+.format-head {
+  margin-block-end: 1.5rem;
 }
 
 .format-head h1 {
-  margin: 0.75rem 0 0.35rem;
-  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+  margin: 1rem 0 0.4rem;
+  font-size: 2.25rem;
   letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
 .format-head .lede {
-  margin: 0 0 1.5rem;
-  font-size: 1.02rem;
+  margin: 0;
+  max-width: 40rem;
+  color: var(--muted);
+  font-size: 1.05rem;
 }
 
-/* Layout: the editor, with checks beside it on a wide screen --------------- */
+/* The sheet ---------------------------------------------------------------- */
 
-.workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-  max-width: none;
+.studio {
+  --sheet-radius: 1.25rem;
+  --sheet-pad: 2rem;
 }
 
-@media (min-width: 80rem) {
-  .workspace {
-    grid-template-columns: minmax(0, 1fr) 19rem;
-    align-items: start;
-  }
-
-  /* The checks follow the post as it scrolls, below the floating header. */
-  .workspace-rail {
-    position: sticky;
-    top: 5.5rem;
-  }
+.studio .sheet {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--sheet-radius);
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(18 20 23 / 5%),
+    0 24px 48px -32px rgb(18 20 23 / 30%);
+  transition:
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out;
 }
 
-.workspace-main {
-  display: grid;
-  gap: 1.25rem;
-  min-width: 0;
+/* The post's focus ring is the sheet's: the textarea has no edge of its own. */
+.studio .sheet:has(.compose textarea:focus-visible) {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 24px 48px -32px rgb(18 20 23 / 30%);
 }
 
-.workspace .card {
-  border-radius: 1.25rem;
+/* Toolbar ------------------------------------------------------------------ */
+
+/*
+ * Not sticky: the floating site header is translucent, and text scrolling
+ * between it and a stuck toolbar showed through. The post scrolls inside its
+ * own box past 70% of the viewport instead, so the toolbar stays near it.
+ */
+.studio .toolbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  background: var(--surface);
 }
 
-.workspace .editor-card {
-  padding: 0;
-  overflow: hidden;
-}
-
-/* Command bar --------------------------------------------------------------- */
-
-.workspace .toolbar {
+.studio .toolbar-styles,
+.studio .toolbar-text {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem;
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface-sunken) 55%, var(--surface));
 }
 
-.workspace .group {
-  gap: 0.15rem;
-  padding: 0.2rem;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--surface);
+.studio .toolbar-text {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--line);
 }
 
-/* 0.75rem group corner − 0.2rem inset. */
-.workspace .group button {
+.studio .group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 0;
+  background: transparent;
+}
+
+.studio .toolbar button {
   justify-content: center;
   min-width: 2.25rem;
   min-height: 2.25rem;
-  padding: 0.3rem 0.55rem;
-  border-color: transparent;
-  border-radius: 0.55rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  color: var(--ink);
+  background-color: transparent;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
 }
 
-.workspace .group button:hover:not(:disabled) {
+.studio .toolbar button:hover:not(:disabled) {
   background-color: var(--surface-sunken);
+  border-color: transparent;
 }
 
 /*
- * Pressed wins over hover, explicitly. The hover rule above ties the global
- * pressed rule on specificity and, loading later, would win it: a pressed
- * button under the pointer then showed paper-coloured ink on a light fill,
- * which is invisible. Longhands, so the minifier cannot empty the fill.
+ * Pressed wins over hover, explicitly: the two tie on specificity, and the
+ * hover rule loading later would otherwise paint a pressed button under the
+ * pointer with paper-coloured text on a light fill. Longhands, so the
+ * minifier cannot empty the fill.
  */
-.workspace .group button[aria-pressed='true'],
-.workspace .group button[aria-pressed='true']:hover:not(:disabled) {
+.studio .toolbar .group button[aria-pressed='true'],
+.studio .toolbar .group button[aria-pressed='true']:hover:not(:disabled) {
   background-color: var(--ink);
   border-color: var(--ink);
   color: var(--paper);
 }
 
+.studio .toolbar button:disabled {
+  color: var(--muted);
+  background-color: transparent;
+}
+
+.studio .group-case button {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* What the styling buttons act on, said in words beside them. */
+.studio .scope {
+  padding: 0.2rem 0.6rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.studio .scope[data-scope='some'] {
+  border: 1px solid transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.studio .group-reset {
+  margin-left: auto;
+}
+
+.studio .group-reset button {
+  color: var(--muted);
+}
+
+.studio .group-reset button:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.studio .group-reset .danger:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+/* Style picker ------------------------------------------------------------- */
+
+.studio .style-picker {
+  position: relative;
+}
+
+.studio .toolbar .style-trigger {
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 9.5rem;
+  padding-inline: 0.7rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  background-color: var(--surface);
+}
+
+.studio .toolbar .style-trigger:hover:not(:disabled) {
+  border-color: var(--ink);
+  background-color: var(--surface);
+}
+
+.studio .toolbar .style-trigger[aria-expanded='true'] {
+  border-color: var(--ink);
+}
+
+.studio .style-trigger .icon {
+  color: var(--muted);
+  transition: transform 160ms ease-out;
+}
+
+.studio .style-trigger[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
 .font-face {
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1;
   white-space: nowrap;
 }
@@ -130,248 +234,459 @@
   font-family: Georgia, 'Times New Roman', serif;
 }
 
-/* The two actions that discard work sit apart, quieter, at the far end. */
-.workspace .group-reset {
-  margin-left: auto;
-  border-color: transparent;
-  background: transparent;
-}
-
-.workspace .group-reset button {
+.font-mixed {
   color: var(--muted);
+  font-size: 0.92rem;
 }
 
-.workspace .group-reset .danger:hover:not(:disabled) {
-  color: var(--danger);
+.studio .style-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 30;
+  display: grid;
+  gap: 2px;
+  width: 18rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  box-shadow:
+    0 2px 4px rgb(18 20 23 / 6%),
+    0 24px 48px -16px rgb(18 20 23 / 35%);
+  transform-origin: top left;
+  animation: style-menu-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Panes: one surface, divided ---------------------------------------------- */
-
-.workspace .panes {
-  gap: 0;
-}
-
-.workspace .pane {
-  padding: 0.9rem 1.1rem 1rem;
-}
-
-.workspace .pane-side {
-  border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface-sunken) 60%, var(--surface));
-}
-
-@media (min-width: 56rem) {
-  .workspace .pane-side {
-    border-top: 0;
-    border-left: 1px solid var(--line);
+@keyframes style-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
   }
 }
 
-.workspace .pane-head {
-  margin: 0 0 0.5rem;
+.studio .toolbar .style-option {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.6rem;
+  text-align: left;
 }
 
-.workspace .pane-head label,
-.workspace .pane-head .pane-title {
-  min-width: 0;
+.studio .toolbar .style-option:hover,
+.studio .toolbar .style-option:focus-visible {
+  background-color: var(--surface-sunken);
+}
+
+.studio .toolbar .style-option[aria-pressed='true'],
+.studio .toolbar .style-option[aria-pressed='true']:hover {
+  background-color: var(--accent-soft);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.studio .style-option-face {
+  font-size: 1.3rem;
+}
+
+.studio .style-option-reach {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* Compose ------------------------------------------------------------------ */
+
+.studio .compose {
+  position: relative;
+  padding: 1.75rem var(--sheet-pad) 1.5rem;
+}
+
+.studio .compose textarea {
+  display: block;
+  width: 100%;
+  min-height: 15rem;
+  max-height: 70vh;
+  field-sizing: content;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--ink);
+  caret-color: var(--accent);
+  font: inherit;
+  font-size: 1.15rem;
+  line-height: 1.7;
+}
+
+.studio .compose textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.studio .compose textarea::selection {
+  background: var(--mark);
+  color: var(--ink);
+}
+
+/* An alphabet under the pointer is shown, not yet applied. */
+.studio .compose textarea[data-previewing='true'] {
+  color: color-mix(in srgb, var(--ink) 88%, var(--accent));
+}
+
+.studio .try-example {
+  position: absolute;
+  top: 4.75rem;
+  left: var(--sheet-pad);
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
   font-weight: 600;
 }
 
-/* The view switch keeps its two options on one line; the label gives way. */
-.workspace .pane-head .segmented {
-  flex: none;
-  flex-wrap: nowrap;
+.studio .try-example:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
-/*
- * The text areas grow with the post (where the browser can size a field to
- * its content) between a comfortable floor and a ceiling, and draw no box of
- * their own: the pane is the box. Focus is shown on the pane instead.
- */
-.workspace .pane textarea {
-  field-sizing: content;
-  min-height: 16rem;
-  max-height: 60vh;
-  padding: 0;
+/* Selection bar ------------------------------------------------------------- */
+
+.studio .bubble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 0.75rem;
+  background: var(--ink);
+  box-shadow: 0 12px 28px -10px rgb(0 0 0 / 45%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 120ms ease-out,
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 120ms;
+}
+
+.studio .bubble[data-side='below'] {
+  transform: translateY(-4px);
+}
+
+.studio .bubble[data-open='true'] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition:
+    opacity 120ms ease-out,
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio .bubble button {
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.35rem;
   border: 0;
-  border-radius: 0;
+  border-radius: 0.55rem;
+  color: var(--paper);
+  background-color: transparent;
+}
+
+.studio .bubble button:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--paper) 16%, transparent);
+  border-color: transparent;
+}
+
+.studio .bubble button[aria-pressed='true'],
+.studio .bubble button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+
+.studio .bubble button:disabled {
+  color: color-mix(in srgb, var(--paper) 40%, transparent);
+  background-color: transparent;
+}
+
+/* Measure ------------------------------------------------------------------ */
+
+.studio .measure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  padding: 0.75rem var(--sheet-pad);
+  border-top: 1px solid var(--line);
+}
+
+.studio .targets {
+  border: 0;
+  padding: 0;
   background: transparent;
+}
+
+.studio .targets button {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.88rem;
+}
+
+.studio .targets .segmented-pill {
+  background: var(--surface-sunken);
   box-shadow: none;
+}
+
+.studio .targets button[aria-pressed='true'],
+.studio .targets button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: transparent;
+  border-color: transparent;
   color: var(--ink);
-  font-size: 1.06rem;
-  line-height: 1.65;
+}
+
+.studio .budget {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio .budget .meter {
+  width: 7rem;
+}
+
+.studio .budget-cost {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Checks ------------------------------------------------------------------- */
+
+.studio .listen {
+  padding: 1.25rem var(--sheet-pad) 1.5rem;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-sunken) 55%, var(--surface));
+}
+
+.studio .listen-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-block-end: 1rem;
+}
+
+.studio .listen-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.studio .views {
+  background: var(--surface);
+}
+
+.studio .views button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.88rem;
+}
+
+.studio .transcript {
+  max-height: 16rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--surface);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Read out by name: the accent and the data face, nothing heavier. */
+.studio .said {
+  margin-inline: 0.1em;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.84em;
+}
+
+.studio .listen-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  max-width: 44rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.95rem;
+}
+
+.studio .listen-head + .listen-note {
+  margin-top: 0;
+}
+
+.studio .listen-note .icon {
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+
+.studio .listen-note.warn .icon {
+  color: var(--accent);
+}
+
+.studio .plain {
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  field-sizing: content;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1.7;
   resize: none;
 }
 
-.workspace .pane textarea:focus,
-.workspace .pane textarea:focus-visible {
-  outline: none;
+.studio .gaps {
+  margin: 0.6rem 0 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-.workspace .pane:focus-within {
-  box-shadow: inset 0 0 0 2px var(--accent);
-}
-
-.workspace .pane textarea[readonly] {
-  background: transparent;
+.studio .gaps mark {
+  border-radius: 0.2rem;
+  background: var(--mark);
   color: var(--ink);
 }
 
-/* Segmented controls inside the workspace show the sliding pill, not a fill. */
-.workspace .segmented button[aria-pressed='true'],
-.workspace .segmented button[aria-pressed='true']:hover:not(:disabled) {
-  background-color: transparent;
-  color: var(--ink);
-  border-color: transparent;
+.studio .fold-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 1.25rem 0 0.25rem;
+  font-size: 1rem;
 }
 
-.workspace .segmented {
-  padding: 0.2rem;
-  border-radius: 0.75rem;
+.studio .stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 1.25rem 0 0.2rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.workspace .segmented button {
-  padding: 0.3rem 0.65rem;
-  border-radius: 0.55rem;
+.studio .stats li {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.studio .facts {
+  margin: 0;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
-.workspace .segmented-pill {
-  border-radius: 0.55rem;
-}
+/* Dock --------------------------------------------------------------------- */
 
-/* Status bar ---------------------------------------------------------------- */
-
-.workspace .statusbar {
-  display: flex;
-  flex-wrap: wrap;
+.studio .dock {
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 0.75rem 1.25rem;
-  padding: 0.8rem 1.1rem;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem var(--sheet-pad) 1.25rem;
   border-top: 1px solid var(--line);
 }
 
-.statusbar-target {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
+.studio .dock .hint {
+  margin: 0;
+  max-width: 30rem;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
-.workspace .targets-label {
+.studio .actions {
+  margin: 0;
+}
+
+.studio .actions button {
+  white-space: nowrap;
+}
+
+.studio .actions button,
+.studio .actions button:first-child {
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75rem;
+  background-color: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.studio .actions button:hover:not(:disabled) {
+  border-color: var(--ink);
+  background-color: var(--surface);
+}
+
+.studio .actions .primary,
+.studio .actions .primary:hover:not(:disabled) {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.studio .actions .primary:hover:not(:disabled) {
+  border-color: var(--accent-hover);
+  background-color: var(--accent-hover);
+}
+
+.studio .actions button:disabled,
+.studio .actions .primary:disabled {
+  border-color: var(--line);
+  background-color: transparent;
   color: var(--muted);
 }
 
-.workspace .targets {
-  border-bottom: 0;
+.studio .status-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  min-height: 1.5rem;
 }
 
-.workspace .budget {
-  flex: 1 1 14rem;
-  margin: 0;
-}
-
-.budget-count {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.workspace .budget.over .budget-count {
-  color: var(--danger);
-}
-
-.workspace .meter {
-  height: 0.4rem;
-  border: 0;
-}
-
-.workspace .meter-fill {
-  width: 100%;
-  transform-origin: left center;
-  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .workspace .meter-fill {
-    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-}
-
-.workspace .actions {
-  flex-wrap: nowrap;
-  margin: 0;
-}
-
-.workspace .actions button,
-.workspace .actions button:first-child {
-  padding: 0.55rem 0.95rem;
-  border-color: var(--line-strong);
-  border-radius: 0.7rem;
-  background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.workspace .actions button:first-child:hover,
-.workspace .actions button:hover:not(:disabled) {
-  background: var(--surface-sunken);
-  border-color: var(--ink);
-}
-
-/* The one primary action on the page. */
-.workspace .actions .primary,
-.workspace .actions .primary:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  box-shadow: 0 10px 22px -14px var(--accent);
-}
-
-.workspace .actions .primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
-
-/*
- * The foot: what the target means and where the draft lives on the left, and
- * the final step — copying — on the right, where a confirming action sits.
- */
-.editor-foot {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.5rem 1.5rem;
-  align-items: end;
-  padding: 0 1.1rem 0.9rem;
-}
-
-@media (min-width: 48rem) {
-  .editor-foot {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'hint actions'
-      'saved actions';
-  }
-
-  .editor-foot .hint {
-    grid-area: hint;
-  }
-
-  .editor-foot .saved {
-    grid-area: saved;
-  }
-
-  .editor-foot .actions {
-    grid-area: actions;
-  }
-}
-
-.workspace .editor-foot .hint {
-  margin: 0;
-  max-width: 38rem;
-}
-
-.saved {
-  display: inline-flex;
+.studio .saved {
+  display: flex;
   align-items: center;
   gap: 0.4rem;
   margin: 0;
@@ -379,220 +694,87 @@
   font-size: 0.82rem;
 }
 
-.saved .icon {
-  width: 15px;
-  height: 15px;
+.studio .status {
+  margin: 0 0 0 auto;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
-.status-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0 1.1rem;
-}
-
-.workspace .status-row .status {
-  margin: 0 0 0.9rem;
-}
-
-.workspace .undo {
-  margin-bottom: 0.9rem;
-  padding: 0.25rem 0.75rem;
-  border-color: var(--line-strong);
+.studio .undo {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-/* Every style --------------------------------------------------------------- */
+/* Small screens ------------------------------------------------------------- */
 
-.workspace .styles-card {
-  padding: 1.25rem;
-}
-
-.card-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.25rem 1rem;
-  margin-bottom: 1rem;
-}
-
-.card-head h2 {
-  margin: 0;
-  font-size: 1.15rem;
-}
-
-.workspace .card-head .hint {
-  margin: 0;
-}
-
-.workspace .style-list {
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.6rem;
-}
-
-/* 1.25rem card corner − 1.25rem padding would be square; 0.9rem reads as a tile. */
-.workspace .style-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'label button'
-    'sample sample';
-  align-items: center;
-  gap: 0.55rem 0.75rem;
-  padding: 0.8rem 0.9rem 0.9rem;
-  border: 1px solid var(--line);
-  border-radius: 0.9rem;
-  background: var(--surface);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .workspace .style-row {
-    transition:
-      border-color 160ms ease,
-      transform 160ms ease;
-  }
-}
-
-@media (hover: hover) {
-  .workspace .style-row:hover {
-    border-color: var(--line-strong);
-    background: var(--surface);
-    transform: translateY(-1px);
-  }
-}
-
-.workspace .style-label {
-  grid-area: label;
-  width: auto;
-  color: var(--muted);
-}
-
-.workspace .style-sample {
-  grid-area: sample;
-  font-size: 1.12rem;
-}
-
-.workspace .style-row button {
-  grid-area: button;
-  padding: 0.25rem 0.6rem;
-  border-color: var(--line);
-  border-radius: 0.6rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.workspace .style-row button.is-copied {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* Checks -------------------------------------------------------------------- */
-
-.workspace .checks {
-  margin: 0;
-  padding: 1.25rem;
-}
-
-.workspace .checks h2 {
-  margin: 0 0 0.9rem;
-  font-size: 1.15rem;
-}
-
-.workspace .stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin: 0 0 1rem;
-}
-
-.workspace .stats li {
-  display: flex;
-  flex-direction: column;
-  padding: 0.6rem 0.7rem;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--surface-sunken);
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.workspace .stats strong {
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
-.workspace .check {
-  margin: 0 0 0.5rem;
-  padding: 0.7rem 0.8rem;
-  border-radius: 0.75rem;
-  background: var(--surface-sunken);
-  font-size: 0.9rem;
-}
-
-/* A soft fill carries the warning; no side-tab border. */
-.workspace .notice {
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  border-radius: 0.75rem;
-  background: var(--accent-soft);
-}
-
-/* Fit -------------------------------------------------------------------- */
-
-/* Tighter command bar, so the whole bar fits one row on a laptop. */
-.workspace .toolbar {
-  gap: 0.4rem;
-}
-
-.workspace .group button {
-  padding-inline: 0.45rem;
-}
-
-.workspace .actions button {
-  white-space: nowrap;
-}
-
-/*
- * Below the two-column layout the checks belong right after the post they
- * describe, not under fourteen style cards. The main column dissolves into
- * the workspace grid so the three cards can be ordered as one list.
- */
-@media (max-width: 79.99rem) {
-  .workspace-main {
-    display: contents;
+@media (max-width: 40rem) {
+  .studio {
+    --sheet-pad: 1rem;
+    --sheet-radius: 1rem;
   }
 
-  .workspace .styles-card {
-    order: 2;
-  }
-}
-
-@media (max-width: 47.99rem) {
-  .workspace .actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .format-head h1 {
+    font-size: 1.75rem;
   }
 
-  .workspace .actions button {
+  .studio .toolbar {
+    padding: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .studio .toolbar-text {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .studio .compose {
+    padding-top: 1.25rem;
+  }
+
+  .studio .compose textarea {
+    min-height: 12rem;
+    font-size: 1.05rem;
+  }
+
+  .studio .try-example {
+    top: 4.5rem;
+  }
+
+  .studio .dock {
+    grid-template-columns: 1fr;
+  }
+
+  .studio .actions button {
+    flex: 1 1 auto;
     justify-content: center;
   }
+
+  .studio .status {
+    margin-left: 0;
+  }
 }
 
-/*
- * Touch: the workspace's compact 36px controls are a pointer size. On a touch
- * screen every one returns to the HIG's 44 × 44 pt, which the rules above
- * would otherwise override (they outrank the global touch rule in panes.css).
- */
+/* Touch: 44 × 44 targets (Apple HIG), checked by e2e/responsive.spec.ts. */
 @media (pointer: coarse) {
-  .workspace .group button,
-  .workspace .segmented button {
+  .studio .toolbar button,
+  .studio .segmented button,
+  .studio .undo {
     min-width: 44px;
     min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio .style-menu {
+    animation: none;
+  }
+
+  .studio .bubble,
+  .studio .bubble[data-open='true'] {
+    transform: none;
+    transition: none;
   }
 }
