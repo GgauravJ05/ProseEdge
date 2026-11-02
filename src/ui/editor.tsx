@@ -80,6 +80,9 @@ const EXAMPLE = [
   `${inStyle('Apply by Friday', specimenOf('sans_italic'))}, or send this to someone who should.`,
 ].join('\n');
 
+const COPY_BLOCKED =
+  'Copying was blocked, so the text is selected. Use your device’s copy command.';
+
 /** Below this, a Flesch–Kincaid grade swings too much to be worth showing. */
 const READING_MIN_WORDS = 20;
 
@@ -127,6 +130,7 @@ type View = 'hear' | 'plain' | 'feed';
 export function Editor() {
   const id = useId();
   const textarea = useRef<HTMLTextAreaElement>(null);
+  const plainArea = useRef<HTMLTextAreaElement>(null);
   /*
    * A non-empty saved draft is offered, not loaded silently: a reader who
    * reloads to start over kept getting yesterday's post back with no way to
@@ -399,12 +403,38 @@ export function Editor() {
     emphasize(key === 'b' ? 'bold' : 'italic', false);
   };
 
-  const copy = async (text: string, what: string) => {
+  /** Asked to copy the plain text while it was not showing, so select it once it is. */
+  const selectingPlain = useRef(false);
+  useEffect(() => {
+    if (!selectingPlain.current) return;
+    selectingPlain.current = false;
+    plainArea.current?.focus();
+    plainArea.current?.select();
+  }, [view]);
+
+  const selectPost = () => {
+    textarea.current?.focus();
+    textarea.current?.select();
+  };
+
+  const selectPlain = () => {
+    if (plainArea.current !== null) {
+      plainArea.current.focus();
+      plainArea.current.select();
+      return;
+    }
+    selectingPlain.current = true;
+    setView('plain');
+  };
+
+  const copy = async (text: string, what: string, selectIt: () => void) => {
     try {
       await navigator.clipboard.writeText(text);
       setStatus(`Copied ${what}.`);
     } catch {
-      setStatus('Copying was blocked. Select the text and copy it yourself.');
+      // Do the part we can, so all that is left is the copy command itself.
+      selectIt();
+      setStatus(COPY_BLOCKED);
     }
   };
 
@@ -494,30 +524,38 @@ export function Editor() {
   return (
     <section className="studio" aria-label="Formatter">
       {pendingDraft !== null && (
-        <div className="draft-prompt-scrim">
-          <div
-            className="card draft-prompt"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={`${id}-draft-title`}
-            aria-describedby={`${id}-draft-body`}
-          >
-            <h2 id={`${id}-draft-title`}>Restore your last draft?</h2>
-            <p id={`${id}-draft-body`}>
-              A post was saved in this browser from before the page reloaded.
-            </p>
-            <div className="draft-prompt-actions">
-              <button type="button" autoFocus onClick={restoreDraft}>
-                <RestoreIcon />
-                Restore draft
-              </button>
-              <button type="button" onClick={discardDraft}>
-                <ClearIcon />
-                Start fresh
-              </button>
-            </div>
+        /*
+         * A native modal, so the whole page behind it is out of reach, not only
+         * the sheet. Escape keeps the draft: leaving a question unanswered must
+         * not be what throws work away.
+         */
+        <dialog
+          ref={(el) => {
+            if (el !== null && !el.open) el.showModal();
+          }}
+          className="card draft-prompt"
+          aria-labelledby={`${id}-draft-title`}
+          aria-describedby={`${id}-draft-body`}
+          onCancel={(event) => {
+            event.preventDefault();
+            restoreDraft();
+          }}
+        >
+          <h2 id={`${id}-draft-title`}>Restore your last draft?</h2>
+          <p id={`${id}-draft-body`}>
+            A post was saved in this browser from before the page reloaded.
+          </p>
+          <div className="draft-prompt-actions">
+            <button type="button" autoFocus onClick={restoreDraft}>
+              <RestoreIcon />
+              Restore draft
+            </button>
+            <button type="button" onClick={discardDraft}>
+              <ClearIcon />
+              Start fresh
+            </button>
           </div>
-        </div>
+        </dialog>
       )}
 
       <div className="sheet" inert={pendingDraft !== null}>
@@ -789,6 +827,7 @@ export function Editor() {
                 </label>
                 <textarea
                   id={`${id}-plain`}
+                  ref={plainArea}
                   className="plain"
                   rows={6}
                   readOnly
@@ -873,7 +912,7 @@ export function Editor() {
               type="button"
               disabled={empty}
               onClick={() => {
-                void copy(plain, 'plain text');
+                void copy(plain, 'plain text', selectPlain);
               }}
             >
               <PlainTextIcon />
@@ -884,7 +923,7 @@ export function Editor() {
               className="primary"
               disabled={empty}
               onClick={() => {
-                void copy(result.output, 'the styled post');
+                void copy(result.output, 'the styled post', selectPost);
               }}
             >
               <CopyIcon />
@@ -896,7 +935,11 @@ export function Editor() {
               <LockIcon />
               Saved in this browser only. Nothing you type is sent anywhere.
             </p>
-            <p role="status" className="status">
+            <p
+              role="status"
+              className="status"
+              data-tone={status === COPY_BLOCKED ? 'error' : undefined}
+            >
               {status}
             </p>
             {undo !== null && (
