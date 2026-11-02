@@ -1,0 +1,21 @@
+{
+  "date_from": "2025-08-01",
+  "date_to": "2026-07-31",
+  "file": "pairs/test.jsonl",
+  "filters": {
+    "boundaries": "2006-10-01T00:00:00+00:00,2007-01-01T00:00:00+00:00,2024-08-01T00:00:00+00:00,2025-08-01T00:00:00+00:00,2026-08-01T00:00:00+00:00",
+    "decile_edges": "1,4,11,24,48,99,225,598,2067",
+    "excluded_reposts": "11471",
+    "inputs_sha256": "7bc69deaeb60a02b0efe61153676c3c97c4e91b2a3ce78418046379bffd65676",
+    "margin": "4",
+    "max_pairs_per_post": "3",
+    "posts": "347142",
+    "seed": "0",
+    "split": "test",
+    "winner_floor": "10"
+  },
+  "format": 1,
+  "rows": 143464,
+  "sha256": "641e06688aa5fa88617a5e44119b3fb545469d06ca57c67e89baf29f50b1f538",
+  "source": "stratified-pairs"
+}
