@@ -11,7 +11,9 @@ export default defineConfig({
   forbidOnly: CI,
   retries: CI ? 1 : 0,
   reporter: CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  use: { baseURL: BASE_URL, trace: 'retain-on-failure' },
+  // Reduced motion shows revealed content at once, so scans and screenshots never
+  // catch an element halfway through its entrance.
+  use: { baseURL: BASE_URL, trace: 'retain-on-failure', reducedMotion: 'reduce' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     // Tests run against the static export exactly as deployed: `pnpm build` first.

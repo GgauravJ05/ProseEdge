@@ -22,22 +22,29 @@ test.afterEach(() => {
 });
 
 const views = (page: import('@playwright/test').Page) =>
-  page.getByRole('group', { name: 'Right pane view' });
+  page.getByRole('group', { name: 'Output view' });
 
-/** Switch the right pane to the feed preview, which is not the default view. */
+/** Switch the checks to the feed preview, which is not the default view. */
 async function showPreview(page: import('@playwright/test').Page): Promise<void> {
-  await views(page).getByRole('button', { name: 'Preview' }).click();
+  await views(page).getByRole('button', { name: 'Feed preview' }).click();
 }
 
-test('the plain text pane is what the editor opens on', async ({ page }) => {
-  // The styled post beside the text a screen reader hears is the argument this
-  // app makes, so it is what loads; the preview is the option (ADR 0009).
-  await expect(views(page).getByRole('button', { name: 'Plain text' })).toHaveAttribute(
+test('what a screen reader may say is what the checks open on', async ({ page }) => {
+  // Showing the cost of styling beside the choice is the argument this app
+  // makes, so it is what loads; the preview is the option (ADR 0009).
+  await expect(views(page).getByRole('button', { name: 'Hear it' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await expect(page.getByLabel('Plain text')).toBeVisible();
   await expect(page.locator('.preview-card')).toHaveCount(0);
+
+  const post = page.getByLabel('Post');
+  await post.fill('Hi there');
+  await select(post, 0, 'Hi'.length);
+  await page.getByRole('button', { name: 'Bold' }).click();
+  await expect(page.getByRole('region', { name: 'What a screen reader may say' })).toHaveText(
+    'mathematical bold capital h, mathematical bold small i there',
+  );
 });
 
 test('the preview shows the post as the feed would lay it out', async ({ page }) => {
@@ -65,7 +72,7 @@ test('the two views switch without losing the post', async ({ page }) => {
   await expect(page.locator('.preview-card')).toHaveCount(0);
 });
 
-test('the preview keeps the styling, and the plain pane still strips it', async ({ page }) => {
+test('the preview keeps the styling, and the plain text still strips it', async ({ page }) => {
   const post = page.getByLabel('Post');
   await post.fill('Bold claim');
   await select(post, 0, 'Bold'.length);
@@ -102,7 +109,7 @@ test('without a target there is no feed to imitate', async ({ page }) => {
   await page.getByLabel('Post').fill('Nowhere in particular');
   await showPreview(page);
   // Show the card first, so its absence below means "no feed to imitate"
-  // rather than "the plain pane happens to be showing".
+  // rather than "another view happens to be showing".
   await expect(page.locator('.preview-card')).toBeVisible();
 
   await page.getByRole('button', { name: 'No target' }).click();

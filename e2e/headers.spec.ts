@@ -38,14 +38,14 @@ test('the page runs clean under the policy, with its fonts and styles applied', 
     if (message.type() === 'error') blocked.push(message.text());
   });
   await page.goto('/');
-  await expect(page.getByLabel('Post')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   // A blocked stylesheet or font would leave these at the browser defaults.
   const fonts = await page.evaluate(() => ({
     heading: getComputedStyle(document.querySelector('h1') as Element).fontFamily,
     body: getComputedStyle(document.body).fontFamily,
   }));
-  expect(fonts.heading).toContain('Source Serif 4');
-  expect(fonts.body).toContain('Inter');
+  expect(fonts.heading).toContain('Space Grotesk');
+  expect(fonts.body).toContain('Plus Jakarta Sans');
   expect(blocked).toEqual([]);
 });

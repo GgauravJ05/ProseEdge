@@ -1,5 +1,6 @@
 /*
- * The split view and the target selector. Imported by globals.css so the
+ * Shared editor pieces: the target selector, the length meter, the feed
+ * preview card and the restore-draft prompt. Imported by globals.css so the
  * cascade order stays explicit: tokens and base first, then these components.
  */
 
@@ -19,24 +20,39 @@
  * control is under 44px there.
  */
 @media (pointer: coarse) {
+  /* Apple HIG: 44 × 44 pt is the default target on iOS — in both directions. */
   button {
     min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
     padding-inline: 0.85rem;
+  }
+
+  /*
+   * Links that stand alone (nav, footer, the hero's secondary link) get the
+   * same 44px height. Links inside running prose keep the line's height: a
+   * 44px box there would push lines apart without making the text easier
+   * to tap.
+   */
+  .brand,
+  .site-nav a,
+  .footer-links a,
+  .cta-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .footer-links {
+    gap: 0;
   }
 }
 
 /* Small phones: reclaim the gutters and tighten the hero. */
 @media (max-width: 26rem) {
+  /* Apple HIG: 16 pt leading and trailing margins in compact width. */
   body {
-    padding-inline: 0.875rem;
-  }
-
-  .editor-card {
-    padding: 0.5rem 0.5rem 0.75rem;
-  }
-
-  .checks {
-    padding: 1rem 0.9rem 1.15rem;
+    padding-inline: 1rem;
   }
 
   .lede {
@@ -46,16 +62,6 @@
   .theme-toggle-text {
     /* The icon carries the meaning; the label would crowd the header. */
     display: none;
-  }
-}
-
-/* Wide screens: let the two panes breathe rather than capping at reading width. */
-@media (min-width: 90rem) {
-  .editor,
-  .site-header,
-  .site-footer,
-  main {
-    max-width: 64rem;
   }
 }
 
@@ -162,185 +168,6 @@
   background: var(--danger);
 }
 
-/* Split view -------------------------------------------------------------- */
-
-.panes {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-@media (min-width: 56rem) {
-  .panes {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.pane {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/*
- * Both heads are exactly as tall as the tallest thing either can hold, which is
- * the view switch in the right one. A `min-height` floor is not enough: on
- * touch the switch's buttons take the global 44px minimum and the right head
- * grows past any floor set here, so the heads are sized from the same variable
- * and the content is centred inside it.
- *
- * e2e/responsive.spec.ts asserts the two panes stay level on a wide screen, so
- * a regression here fails the suite rather than only looking slightly off.
- */
-.panes {
-  --pane-head-height: 2.4rem;
-}
-
-@media (pointer: coarse) {
-  .panes {
-    /* The 44px touch target plus the switch's own padding. */
-    --pane-head-height: 3.25rem;
-  }
-}
-
-.pane-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  height: var(--pane-head-height);
-  margin-block: 1rem 0.4rem;
-}
-
-/* The switch fills the head rather than setting its height. */
-.pane-views button {
-  min-height: 0;
-}
-
-.pane-head label,
-.pane-head .pane-title {
-  margin: 0;
-}
-
-.pane-hint {
-  font-size: 0.78rem;
-  color: var(--muted);
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 400;
-}
-
-.pane textarea {
-  flex: 1;
-}
-
-.pane textarea[readonly] {
-  background: var(--surface-sunken);
-  color: var(--muted);
-}
-
-/* Every style, one click each -------------------------------------------- */
-
-.style-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.25rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/*
- * `min-width: 0` is what makes the row obey its grid track. Without it a flex
- * item sizes to its content, so an unbroken 90-character word in the sample
- * made the row 649px wide inside a 390px viewport and pushed the whole page
- * sideways — the ellipsis never engaged because nothing was constraining it.
- */
-.style-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
-  padding: 0.4rem 0.5rem;
-  border-radius: var(--radius-sm);
-}
-
-.style-row:hover {
-  background: var(--surface-sunken);
-}
-
-/*
- * The sample takes the space and truncates; the label and the button keep
- * their size, so the buttons stay in one column however long the post is.
- */
-.style-sample {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 1.02rem;
-}
-
-.style-label {
-  flex: none;
-  width: 7.5rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.style-row button {
-  flex: none;
-}
-
-/* Narrow screens: the label moves under the sample rather than squeezing it. */
-@media (max-width: 40rem) {
-  .style-row {
-    flex-wrap: wrap;
-    gap: 0.35rem 0.6rem;
-  }
-
-  .style-sample {
-    /* Not `100%`: a percentage basis plus a long word grows the row again. */
-    flex: 1 1 0;
-    min-width: 0;
-    order: -1;
-  }
-
-  /*
-   * `flex: 1 1 auto` sized this to its content, which on a narrow screen made
-   * the label itself 581px wide. It keeps its intrinsic width and lets the
-   * sample take what is left.
-   */
-  .style-label {
-    width: auto;
-    flex: 0 1 auto;
-    min-width: 0;
-  }
-}
-
-/* Right pane view switch -------------------------------------------------- */
-
-/*
- * Preview and plain text share the right pane. A small segmented control, not
- * tabs: there are two views over the same post, and the pane heading already
- * says which is showing.
- */
-.pane-views {
-  display: inline-flex;
-  gap: 0.25rem;
-  padding: 0.2rem;
-  background: var(--surface-sunken);
-  border-radius: var(--radius-sm);
-}
-
-.pane-views button {
-  font-size: 0.82rem;
-  padding: 0.25rem 0.55rem;
-}
-
 /* Post preview card ------------------------------------------------------- */
 
 /*
@@ -444,4 +271,50 @@
   .preview-actions {
     gap: 1.25rem;
   }
+}
+
+/* Restore-draft prompt ----------------------------------------------------- */
+
+.draft-prompt-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgb(0 0 0 / 45%);
+}
+
+.draft-prompt {
+  max-width: 26rem;
+  padding: 1.25rem 1.35rem 1.5rem;
+}
+
+.draft-prompt h2 {
+  font-size: 1.15rem;
+  margin-block: 0 0.5rem;
+}
+
+.draft-prompt p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.draft-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 1.1rem;
+}
+
+.draft-prompt-actions button:first-child {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.draft-prompt-actions button:first-child:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }

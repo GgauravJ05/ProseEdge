@@ -1,0 +1,875 @@
+/*
+ * The formatter: one sheet, written top to bottom in the order a post is made.
+ *
+ *   toolbar   the alphabet and its emphasis, acting on the scope named beside
+ *             them (the selection, or the whole post); then lists and case
+ *   compose   the post itself, the only large type on the page
+ *   measure   where it is going and how much of the limit it uses
+ *   checks    what a screen reader may say, the plain text, or the feed
+ *   dock      copy it out
+ *
+ * It replaces a three-column workspace of nested cards, where the plain-text
+ * pane repeated the post word for word until something was styled, and a grid
+ * of fourteen copy cards repeated it again. The cost of styling now sits under
+ * the words it applies to, and appears only when there is a cost.
+ *
+ * Every rule is scoped to `.format-page` or `.studio`, so nothing here reaches
+ * another page. Corners are concentric: an inner radius is its container's
+ * radius minus the padding between them.
+ */
+
+.format-page {
+  max-width: 56rem;
+  padding-block: 1.5rem 4rem;
+}
+
+/* The header links to this page; on this page that link goes nowhere. */
+body:has(.format-page) .nav-cta {
+  display: none;
+}
+
+.format-head {
+  margin-block-end: 1.5rem;
+}
+
+.format-head h1 {
+  margin: 1rem 0 0.4rem;
+  font-size: 2.25rem;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.format-head .lede {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+/* The sheet ---------------------------------------------------------------- */
+
+.studio {
+  --sheet-radius: 1.25rem;
+  --sheet-pad: 2rem;
+}
+
+.studio .sheet {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--sheet-radius);
+  background: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(18 20 23 / 5%),
+    0 24px 48px -32px rgb(18 20 23 / 30%);
+  transition:
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+
+/* The post's focus ring is the sheet's: the textarea has no edge of its own. */
+.studio .sheet:has(.compose textarea:focus-visible) {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 24px 48px -32px rgb(18 20 23 / 30%);
+}
+
+/* Toolbar ------------------------------------------------------------------ */
+
+/*
+ * Not sticky: the floating site header is translucent, and text scrolling
+ * between it and a stuck toolbar showed through. The post scrolls inside its
+ * own box past 70% of the viewport instead, so the toolbar stays near it.
+ */
+.studio .toolbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  background: var(--surface);
+}
+
+.studio .toolbar-styles,
+.studio .toolbar-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.studio .toolbar-text {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--line);
+}
+
+.studio .group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 0;
+  background: transparent;
+}
+
+.studio .toolbar button {
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  color: var(--ink);
+  background-color: transparent;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+
+.studio .toolbar button:hover:not(:disabled) {
+  background-color: var(--surface-sunken);
+  border-color: transparent;
+}
+
+/*
+ * Pressed wins over hover, explicitly: the two tie on specificity, and the
+ * hover rule loading later would otherwise paint a pressed button under the
+ * pointer with paper-coloured text on a light fill. Longhands, so the
+ * minifier cannot empty the fill.
+ */
+.studio .toolbar .group button[aria-pressed='true'],
+.studio .toolbar .group button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.studio .toolbar button:disabled {
+  color: var(--muted);
+  background-color: transparent;
+}
+
+.studio .group-case button {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* What the styling buttons act on, said in words beside them. */
+.studio .scope {
+  padding: 0.2rem 0.6rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.studio .scope[data-scope='some'] {
+  border: 1px solid transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.studio .group-reset {
+  margin-left: auto;
+}
+
+.studio .group-reset button {
+  color: var(--muted);
+}
+
+.studio .group-reset button:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.studio .group-reset .danger:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+/* Style picker ------------------------------------------------------------- */
+
+.studio .style-picker {
+  position: relative;
+}
+
+.studio .toolbar .style-trigger {
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 9.5rem;
+  padding-inline: 0.7rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  background-color: var(--surface);
+}
+
+.studio .toolbar .style-trigger:hover:not(:disabled) {
+  border-color: var(--ink);
+  background-color: var(--surface);
+}
+
+.studio .toolbar .style-trigger[aria-expanded='true'] {
+  border-color: var(--ink);
+}
+
+.studio .style-trigger .icon {
+  color: var(--muted);
+  transition: transform 160ms ease-out;
+}
+
+.studio .style-trigger[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+.font-face {
+  font-size: 1.05rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.font-serif {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.font-mixed {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.studio .style-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 30;
+  display: grid;
+  gap: 2px;
+  width: 18rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  box-shadow:
+    0 2px 4px rgb(18 20 23 / 6%),
+    0 24px 48px -16px rgb(18 20 23 / 35%);
+  transform-origin: top left;
+  animation: style-menu-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes style-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+
+.studio .toolbar .style-option {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.6rem;
+  text-align: left;
+}
+
+.studio .toolbar .style-option:hover,
+.studio .toolbar .style-option:focus-visible {
+  background-color: var(--surface-sunken);
+}
+
+.studio .toolbar .style-option[aria-pressed='true'],
+.studio .toolbar .style-option[aria-pressed='true']:hover {
+  background-color: var(--accent-soft);
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.studio .style-option-face {
+  font-size: 1.3rem;
+}
+
+.studio .style-option-reach {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* Compose ------------------------------------------------------------------ */
+
+.studio .compose {
+  position: relative;
+  padding: 1.75rem var(--sheet-pad) 1.5rem;
+}
+
+.studio .compose textarea {
+  display: block;
+  width: 100%;
+  min-height: 15rem;
+  max-height: 70vh;
+  field-sizing: content;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--ink);
+  caret-color: var(--accent);
+  font: inherit;
+  font-size: 1.15rem;
+  line-height: 1.7;
+}
+
+.studio .compose textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.studio .compose textarea::selection {
+  background: var(--mark);
+  color: var(--ink);
+}
+
+/* An alphabet under the pointer is shown, not yet applied. */
+.studio .compose textarea[data-previewing='true'] {
+  color: color-mix(in srgb, var(--ink) 88%, var(--accent));
+}
+
+.studio .try-example {
+  position: absolute;
+  top: 4.75rem;
+  left: var(--sheet-pad);
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.studio .try-example:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* Selection bar ------------------------------------------------------------- */
+
+.studio .bubble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 0.75rem;
+  background: var(--ink);
+  box-shadow: 0 12px 28px -10px rgb(0 0 0 / 45%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 120ms ease-out,
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s linear 120ms;
+}
+
+.studio .bubble[data-side='below'] {
+  transform: translateY(-4px);
+}
+
+.studio .bubble[data-open='true'] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  transition:
+    opacity 120ms ease-out,
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio .bubble button {
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.35rem;
+  border: 0;
+  border-radius: 0.55rem;
+  color: var(--paper);
+  background-color: transparent;
+}
+
+.studio .bubble button:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--paper) 16%, transparent);
+  border-color: transparent;
+}
+
+.studio .bubble button[aria-pressed='true'],
+.studio .bubble button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+
+.studio .bubble button:disabled {
+  color: color-mix(in srgb, var(--paper) 40%, transparent);
+  background-color: transparent;
+}
+
+/* Measure ------------------------------------------------------------------ */
+
+.studio .measure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  padding: 0.75rem var(--sheet-pad);
+  border-top: 1px solid var(--line);
+}
+
+.studio .targets {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.studio .targets button {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.88rem;
+}
+
+.studio .targets .segmented-pill {
+  background: var(--surface-sunken);
+  box-shadow: none;
+}
+
+.studio .targets button[aria-pressed='true'],
+.studio .targets button[aria-pressed='true']:hover:not(:disabled) {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ink);
+}
+
+.studio .budget {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio .budget .meter {
+  width: 7rem;
+}
+
+.studio .budget-cost {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Checks ------------------------------------------------------------------- */
+
+.studio .listen {
+  padding: 1.25rem var(--sheet-pad) 1.5rem;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-sunken) 55%, var(--surface));
+}
+
+.studio .listen-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-block-end: 1rem;
+}
+
+.studio .listen-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.studio .views {
+  background: var(--surface);
+}
+
+.studio .views button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.88rem;
+}
+
+.studio .transcript {
+  max-height: 16rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--surface);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Read out by name: the accent and the data face, nothing heavier. */
+.studio .said {
+  margin-inline: 0.1em;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.84em;
+}
+
+.studio .listen-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  max-width: 44rem;
+  margin: 0.9rem 0 0;
+  font-size: 0.95rem;
+}
+
+.studio .listen-head + .listen-note {
+  margin-top: 0;
+}
+
+.studio .listen-note .icon {
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+
+.studio .listen-note.warn .icon {
+  color: var(--accent);
+}
+
+.studio .plain {
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  field-sizing: content;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  resize: none;
+}
+
+.studio .gaps {
+  margin: 0.6rem 0 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.studio .gaps mark {
+  border-radius: 0.2rem;
+  background: var(--mark);
+  color: var(--ink);
+}
+
+.studio .fold-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 1.25rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+.studio .stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 1.25rem 0 0.2rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio .stats li {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.studio .facts {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Dock --------------------------------------------------------------------- */
+
+.studio .dock {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  padding: 1rem var(--sheet-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.studio .dock .hint {
+  margin: 0;
+  max-width: 30rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.studio .actions {
+  margin: 0;
+}
+
+.studio .actions button {
+  white-space: nowrap;
+}
+
+.studio .actions button,
+.studio .actions button:first-child {
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.75rem;
+  background-color: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.studio .actions button:hover:not(:disabled) {
+  border-color: var(--ink);
+  background-color: var(--surface);
+}
+
+.studio .actions .primary,
+.studio .actions .primary:hover:not(:disabled) {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.studio .actions .primary:hover:not(:disabled) {
+  border-color: var(--accent-hover);
+  background-color: var(--accent-hover);
+}
+
+.studio .actions button:disabled,
+.studio .actions .primary:disabled {
+  border-color: var(--line);
+  background-color: transparent;
+  color: var(--muted);
+}
+
+.studio .status-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  min-height: 1.5rem;
+}
+
+.studio .saved {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.studio .status {
+  margin: 0 0 0 auto;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.studio .undo {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Wide screens: write on the left, hear it on the right ------------------- */
+
+/*
+ * Stacked, the checks sat a scroll below the post, so every change meant
+ * scrolling down to see what it cost and back up to keep writing. From 70rem
+ * the sheet widens and the checks take a column beside the post, sticky, so
+ * the read-out changes in view as you type. The DOM order is unchanged — the
+ * post, then its checks — so reading order and tab order stay the same.
+ */
+@media (min-width: 70rem) {
+  .format-page {
+    max-width: 82rem;
+  }
+
+  .studio .sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(22rem, 27rem);
+    grid-template-rows: auto 1fr auto auto;
+    align-items: stretch;
+    grid-template-areas:
+      'toolbar listen'
+      'compose listen'
+      'measure listen'
+      'dock listen';
+  }
+
+  .studio .toolbar {
+    grid-area: toolbar;
+    border-radius: var(--sheet-radius) 0 0 0;
+  }
+
+  .studio .compose {
+    grid-area: compose;
+  }
+
+  .studio .compose textarea {
+    min-height: 22rem;
+  }
+
+  .studio .measure {
+    grid-area: measure;
+  }
+
+  .studio .dock {
+    grid-area: dock;
+  }
+
+  /*
+   * Size containment: the post column sets the sheet's height, and the checks
+   * scroll inside it. Without it a long read-out stretched the editor row and
+   * pushed the copy buttons below the fold.
+   */
+  .studio .listen {
+    grid-area: listen;
+    contain: size;
+    padding: 0;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    border-radius: 0 var(--sheet-radius) var(--sheet-radius) 0;
+  }
+
+  .studio .listen-inner {
+    position: sticky;
+    top: 5rem;
+    max-height: min(100%, calc(100dvh - 6rem));
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  /* The column scrolls as a whole, so the transcript need not scroll inside it. */
+  .studio .transcript {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .studio .listen-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .studio .views {
+    width: 100%;
+  }
+
+  .studio .views button {
+    flex: 1;
+  }
+
+  /* The feed card is drawn at a desktop feed's width; fit it to the column. */
+  .studio .preview-card {
+    max-width: 100%;
+  }
+}
+
+/* Small screens ------------------------------------------------------------- */
+
+@media (max-width: 40rem) {
+  .studio {
+    --sheet-pad: 1rem;
+    --sheet-radius: 1rem;
+  }
+
+  .format-head h1 {
+    font-size: 1.75rem;
+  }
+
+  .studio .toolbar {
+    padding: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .studio .toolbar-text {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .studio .compose {
+    padding-top: 1.25rem;
+  }
+
+  .studio .compose textarea {
+    min-height: 12rem;
+    font-size: 1.05rem;
+  }
+
+  .studio .try-example {
+    top: 4.5rem;
+  }
+
+  .studio .dock {
+    grid-template-columns: 1fr;
+  }
+
+  .studio .actions button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .studio .status {
+    margin-left: 0;
+  }
+}
+
+/* Touch: 44 × 44 targets (Apple HIG), checked by e2e/responsive.spec.ts. */
+@media (pointer: coarse) {
+  .studio .toolbar button,
+  .studio .segmented button,
+  .studio .undo {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio .style-menu {
+    animation: none;
+  }
+
+  .studio .bubble,
+  .studio .bubble[data-open='true'] {
+    transform: none;
+    transition: none;
+  }
+}

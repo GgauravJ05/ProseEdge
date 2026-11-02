@@ -9,6 +9,12 @@ openings with a compressed ranking model that runs entirely in the browser.
 
 **Try it: <https://proseedge.vercel.app>**
 
+[![The ProseEdge launch video: a bold "We're hiring" post, then what a screen reader hears, then the real slider, formatter and stats. Click to play, 21 seconds, with sound.](docs/media/launch-video.jpg)](docs/media/launch-video.mp4)
+
+_Watch the 21-second launch video (with sound): click the image above, or
+[download the MP4](https://github.com/GgauravJ05/ProseEdge/raw/main/docs/media/launch-video.mp4).
+Music: "Happy Beats / Business Moves" by [ende.app](https://ende.app/en)._
+
 > **Status: v0.1 formatter.** The editor styles text in serif, sans, script,
 > fraktur, double-struck and monospace — with bold and italic where Unicode has
 > them — plus underline and strikethrough as combining marks, and uppercase and
@@ -27,6 +33,21 @@ Alphanumeric Symbols (`𝗕𝗼𝗹𝗱`) for letters. Screen readers read those
 text as the source of truth, so styling is always reversible, and it reports
 exactly which characters could not be styled rather than silently substituting
 lookalikes.
+
+## Screenshots
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/app-landing-dark.png">
+  <img alt="The ProseEdge landing page: a headline reading 'Unicode bold is not rich text', a specimen card showing the same words in every style, and a Format now call to action." src="docs/screenshots/app-landing-light.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/app-format-dark.png">
+  <img alt="The formatter on a wide screen: on the left, a toolbar of alphabet, emphasis, list and case controls above the post, with 'product designer' selected and a small bold, italic, underline and strikethrough bar floating over it, then the LinkedIn character budget and the copy buttons; on the right, a Checks column reading the styled words out as a screen reader may, as 'mathematical sans-serif bold capital w' and so on." src="docs/screenshots/app-format-light.png">
+</picture>
+
+Light and dark follow an explicit in-app toggle, not the operating system's
+setting, and the choice is remembered in the browser.
 
 ## Architecture
 

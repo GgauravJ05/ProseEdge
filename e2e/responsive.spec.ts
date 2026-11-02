@@ -63,42 +63,72 @@ for (const width of WIDTHS) {
 test.describe('touch devices', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('controls are big enough to tap', async ({ page }) => {
-    await page.goto('/format');
-    await expect(page.getByLabel('Post')).toBeVisible();
+  /*
+   * Apple's HIG default for iOS is a 44 × 44 pt target, in both directions.
+   * Every visible button, slider and stand-alone link is measured; links set
+   * inside a sentence are exempt, since they take the line's height.
+   */
+  for (const path of ['/', '/format']) {
+    test(`controls on ${path} are at least 44 × 44 px`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      // The editor renders on the client: measure it, not the page before it exists.
+      if (path === '/format')
+        await expect(page.getByRole('button', { name: 'Bold' })).toBeVisible();
 
-    const buttons = page.getByRole('button');
-    const count = await buttons.count();
-    expect(count).toBeGreaterThan(5);
+      const measured = await page.evaluate(
+        () => document.querySelectorAll('button, [role="slider"], a[href], input').length,
+      );
+      // A floor, so the test cannot pass by finding nothing to measure.
+      expect(measured).toBeGreaterThan(path === '/format' ? 25 : 15);
 
-    const small: string[] = [];
-    for (let i = 0; i < count; i += 1) {
-      const button = buttons.nth(i);
-      if (!(await button.isVisible())) continue;
-      const box = await button.boundingBox();
-      const name = (await button.textContent())?.trim() ?? `#${String(i)}`;
-      // WCAG 2.2 target size (minimum) is 24px; 44px is the comfortable bar.
-      if ((box?.height ?? 0) < 44) small.push(`${name}: ${String(Math.round(box?.height ?? 0))}px`);
-    }
-    expect(small).toEqual([]);
-  });
+      const small = await page.evaluate(() => {
+        const targets = [
+          ...document.querySelectorAll<HTMLElement>('button, [role="slider"], a[href], input'),
+        ];
+        return targets
+          .filter((el) => {
+            const style = getComputedStyle(el);
+            const box = el.getBoundingClientRect();
+            const hidden =
+              style.visibility === 'hidden' ||
+              box.width === 0 ||
+              el.closest('[aria-hidden="true"], .visually-hidden, .skip-link') !== null;
+            const inProse = el.tagName === 'A' && el.closest('p, li > span') !== null;
+            return !hidden && !inProse;
+          })
+          .map((el) => ({ el, box: el.getBoundingClientRect() }))
+          .filter(({ box }) => box.width < 44 || box.height < 44)
+          .map(
+            ({ el, box }) =>
+              `${(el.getAttribute('aria-label') ?? el.textContent).trim().slice(0, 40)}: ${String(Math.round(box.width))}×${String(Math.round(box.height))}`,
+          );
+      });
+      expect(small).toEqual([]);
+    });
+  }
 
-  test('the panes stack instead of sitting side by side', async ({ page }) => {
+  test('the checks sit under the editor, full width', async ({ page }) => {
     await page.goto('/format');
     const post = await page.getByLabel('Post').boundingBox();
-    const plain = await page.getByLabel('Plain text').boundingBox();
-    expect(post).not.toBeNull();
-    expect(plain).not.toBeNull();
-    // Stacked: the plain pane starts below the styled one.
-    expect(plain?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0) - 1);
+    const checks = await page.getByRole('region', { name: 'Checks' }).boundingBox();
+    expect(checks?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0) - 1);
   });
 });
 
-test('the panes sit side by side on a wide screen', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
+test('on a wide screen the checks sit beside the post and stay in view', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/format');
-  const post = await page.getByLabel('Post').boundingBox();
-  const plain = await page.getByLabel('Plain text').boundingBox();
-  expect(Math.abs((post?.y ?? 0) - (plain?.y ?? 0))).toBeLessThan(4);
-  expect(plain?.x ?? 0).toBeGreaterThan((post?.x ?? 0) + (post?.width ?? 0) - 1);
+  const post = page.getByLabel('Post');
+  const checks = page.getByRole('region', { name: 'Checks' });
+  const postBox = await post.boundingBox();
+  const checksBox = await checks.boundingBox();
+  // Beside, not below: the checks start right of the post and level with its top.
+  expect(checksBox?.x ?? 0).toBeGreaterThan((postBox?.x ?? 0) + (postBox?.width ?? 0));
+  expect(checksBox?.y ?? 0).toBeLessThan(postBox?.y ?? 0);
+
+  // A long post scrolls the page; the checks heading stays on screen beside it.
+  await post.fill('A line of the post.\n'.repeat(60));
+  await page.mouse.wheel(0, 600);
+  await expect(checks.getByRole('heading', { name: 'Checks' })).toBeInViewport();
 });

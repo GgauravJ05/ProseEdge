@@ -1,8 +1,8 @@
 # 0001 — Toolchain and delivery process
 
 - **Status:** Accepted; the _Repository_ bullet is superseded by
-  [0003](0003-private-repository.md) and the _Deployment_ bullet by
-  [0004](0004-deploy-to-vercel.md)
+  [0012](0012-public-repository.md) (by way of [0003](0003-private-repository.md))
+  and the _Deployment_ bullet by [0004](0004-deploy-to-vercel.md)
 - **Date:** 2026-09-10
 
 ## Context

@@ -66,9 +66,9 @@ uv run proseedge-data pairs --warmup 2006-10-01 --train 2007-01-01 \
    the changelog. Scopes: `document`, `analysis`, `runtime`, `ui`, `app`,
    `training`, `eval`, `bench`, `docs`, `ci`, `deps`.
 4. Merge only when the **CI OK** and **Conventional PR title** checks are
-   green, and only by squash. The repository is private on a free plan, so the
-   ruleset is not enforced and this is on you
-   ([ADR 0003](docs/adr/0003-private-repository.md)).
+   green, and only by squash. The repository is public, so `main`'s branch
+   ruleset (`.github/rulesets/main.json`) enforces this
+   ([ADR 0012](docs/adr/0012-public-repository.md)).
 
 Releases are automatic: release-please keeps a release PR open with the next
 version and changelog; merging it tags the release.

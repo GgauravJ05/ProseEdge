@@ -5,7 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { select } from './helpers';
+import { pickFamily, select } from './helpers';
 
 // WCAG 2.2 A and AA rules. A formatter that warns about accessibility has to pass them itself.
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -72,7 +72,7 @@ test('the checks panel passes the scan with a warning and highlights showing', a
   const post = page.getByLabel('Post');
   await post.fill('Top 3 tips');
   await select(post, 0, 'Top 3 tips'.length);
-  await page.getByRole('button', { name: 'Script' }).click();
+  await pickFamily(page, 'Script');
   await expect(page.locator('mark')).toHaveCount(1);
   expect(await violations(page)).toEqual([]);
 });
@@ -87,8 +87,8 @@ test('the post preview passes the scan, in both themes', async ({ page }) => {
   await page.goto('/format');
   await page.getByLabel('Post').fill('A post worth previewing, with a second line to wrap.');
   await page
-    .getByRole('group', { name: 'Right pane view' })
-    .getByRole('button', { name: 'Preview' })
+    .getByRole('group', { name: 'Output view' })
+    .getByRole('button', { name: 'Feed preview' })
     .click();
   await expect(page.locator('.preview-card')).toBeVisible();
   expect(await violations(page)).toEqual([]);
@@ -98,6 +98,21 @@ test('the post preview passes the scan, in both themes', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('.preview-card')).toBeVisible();
   // `violations` waits for the colour transition to settle before scanning.
+  expect(await violations(page)).toEqual([]);
+});
+
+/*
+ * The restore-draft dialog only ever renders over a saved localStorage draft
+ * from a previous visit, so no other scan in this file reaches it: everything
+ * else starts from a clean context. The rest of the page is `inert` while it
+ * is open, so this also checks that inert content is not still reachable by
+ * axe's own traversal.
+ */
+test('the restore-draft dialog passes the scan', async ({ page }) => {
+  await page.goto('/format');
+  await page.getByLabel('Post').fill('A draft worth restoring.');
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Restore your last draft?' })).toBeVisible();
   expect(await violations(page)).toEqual([]);
 });
 
