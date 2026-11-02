@@ -416,7 +416,7 @@ export function Editor() {
   };
 
   const empty = result.output === '';
-  const scopeLabel = collapsed ? 'Whole post' : 'Selection';
+  const scopeLabel = collapsed ? 'Styling the whole post' : 'Styling the selection';
 
   /*
    * The emphasis buttons, shared by the toolbar and the selection bar. The
