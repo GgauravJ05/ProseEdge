@@ -108,3 +108,10 @@ export function announceText(text: string): string {
 export function namedCount(text: string): number {
   return announce(text).filter((segment) => segment.kind === 'name').length;
 }
+
+/** How many words `text` takes to say when styled characters are read by name. */
+export function spokenWords(text: string): number {
+  const words = (value: string) =>
+    value.split(/\s+/u).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+  return announce(text).reduce((total, segment) => total + words(segment.text), 0);
+}

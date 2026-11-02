@@ -506,6 +506,17 @@ body:has(.format-page) .nav-cta {
   font-size: 0.88rem;
 }
 
+.studio .hear-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.studio .hear-lead strong {
+  font-family: var(--font-display);
+  font-size: 1.25em;
+  color: var(--accent);
+}
+
 .studio .transcript {
   max-height: 16rem;
   overflow: auto;
@@ -650,6 +661,20 @@ body:has(.format-page) .nav-cta {
   background-color: var(--surface);
   color: var(--ink);
   font-weight: 600;
+}
+
+.studio .actions button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.studio .actions button[data-copied='true'] .icon {
+  animation: copied-pop 240ms ease-out;
+}
+
+@keyframes copied-pop {
+  from {
+    transform: scale(0.6);
+  }
 }
 
 .studio .actions button:hover:not(:disabled) {
@@ -863,8 +888,17 @@ body:has(.format-page) .nav-cta {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .studio .style-menu {
+  .studio .style-menu,
+  .studio .actions button[data-copied='true'] .icon {
     animation: none;
+  }
+
+  .studio .actions button:active:not(:disabled) {
+    transform: none;
+  }
+
+  .studio .budget .meter-fill {
+    transition: none;
   }
 
   .studio .bubble,
