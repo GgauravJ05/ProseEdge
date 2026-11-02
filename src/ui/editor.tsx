@@ -255,6 +255,14 @@ export function Editor() {
     setPendingDraft(null);
   };
 
+  // The prompt's own focus return does not survive it unmounting; send focus to the post.
+  const promptOpen = pendingDraft !== null;
+  const hadPrompt = useRef(promptOpen);
+  useEffect(() => {
+    if (hadPrompt.current && !promptOpen) textarea.current?.focus();
+    hadPrompt.current = promptOpen;
+  }, [promptOpen]);
+
   /*
    * The text the textarea shows, for mapping its offsets. A ref, updated before
    * the browser can fire `selectionchange` for a new value: a listener holding

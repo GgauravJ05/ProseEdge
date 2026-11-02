@@ -175,6 +175,12 @@ test.describe('the restore-draft prompt', () => {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByLabel('Post')).toHaveValue('A draft worth keeping.');
+    await expect(page.getByLabel('Post')).toBeFocused();
+  });
+
+  test('Start fresh leaves the caret in the empty post', async ({ page }) => {
+    await page.getByRole('button', { name: 'Start fresh' }).click();
+    await expect(page.getByLabel('Post')).toBeFocused();
   });
 
   test('Tab stays inside it', async ({ page }) => {
