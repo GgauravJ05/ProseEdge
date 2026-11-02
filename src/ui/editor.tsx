@@ -166,6 +166,7 @@ export function Editor() {
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const pending = useRef<Selection | null>(null);
   const [status, setStatus] = useState('');
+  const [draftKept, setDraftKept] = useState(true);
   /*
    * The two actions that throw work away can be taken back. People explore
    * more freely when a mistake costs one click, not their post.
@@ -238,7 +239,7 @@ export function Editor() {
 
   useEffect(() => {
     if (pendingDraft !== null || !edited.current) return;
-    browserDrafts.save(result.output);
+    setDraftKept(browserDrafts.save(result.output));
   }, [result, pendingDraft]);
 
   const restoreDraft = () => {
@@ -893,8 +894,10 @@ export function Editor() {
           </div>
           <div className="status-row">
             <p className="saved">
-              <LockIcon />
-              Saved in this browser only. Nothing you type is sent anywhere.
+              {draftKept ? <LockIcon /> : <WarningIcon />}
+              {draftKept
+                ? 'Saved in this browser only. Nothing you type is sent anywhere.'
+                : 'This browser is not keeping your draft, so it will be lost if you reload. Nothing you type is sent anywhere.'}
             </p>
             <p role="status" className="status">
               {status}
