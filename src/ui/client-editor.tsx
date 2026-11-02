@@ -12,5 +12,13 @@ import dynamic from 'next/dynamic';
  */
 export const ClientEditor = dynamic(() => import('./editor').then((module) => module.Editor), {
   ssr: false,
-  loading: () => <p className="hint">Loading the editor…</p>,
+  // Holds the editor's room, so the footer does not jump when the editor arrives.
+  loading: () => (
+    <div className="editor-loading">
+      <p className="hint">Loading the editor…</p>
+      <noscript>
+        <p className="hint">The formatter needs JavaScript, which is off in this browser.</p>
+      </noscript>
+    </div>
+  ),
 });
