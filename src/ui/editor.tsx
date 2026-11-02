@@ -357,6 +357,7 @@ export function Editor() {
     const next = applyEdit(doc, result, text);
     if (next === doc) return;
     setUndo(null);
+    setStatus('');
     pending.current = selected;
     updateDoc(next);
   };
@@ -863,48 +864,55 @@ export function Editor() {
           </div>
         </section>
 
-        <div className="dock">
+        <div className="dock" data-idle={empty && undo === null}>
           <p id={`${id}-hint`} className="hint">
             {platform.note}
             {platform.confidence === 'assumed' && ' This count is assumed, not tested.'}
           </p>
-          <div role="group" aria-label="Copy" className="actions">
-            <button
-              type="button"
-              disabled={empty}
-              onClick={() => {
-                void copy(plain, 'plain text');
-              }}
-            >
-              <PlainTextIcon />
-              Copy plain text
-            </button>
-            <button
-              type="button"
-              className="primary"
-              disabled={empty}
-              onClick={() => {
-                void copy(result.output, 'the styled post');
-              }}
-            >
-              <CopyIcon />
-              Copy styled
-            </button>
-          </div>
-          <div className="status-row">
-            <p className="saved">
-              <LockIcon />
-              Saved in this browser only. Nothing you type is sent anywhere.
-            </p>
-            <p role="status" className="status">
-              {status}
-            </p>
-            {undo !== null && (
-              <button type="button" className="undo" onClick={restoreUndo}>
-                Undo
+          {/*
+           * Pinned while the sheet is stacked. The confirmation and Undo live
+           * here so they appear beside the button that caused them, not a
+           * scroll below it; DOM order still ends the sheet with these.
+           */}
+          <div className="dock-bar">
+            <div role="group" aria-label="Copy" className="actions">
+              <button
+                type="button"
+                disabled={empty}
+                onClick={() => {
+                  void copy(plain, 'plain text');
+                }}
+              >
+                <PlainTextIcon />
+                Copy plain text
               </button>
-            )}
+              <button
+                type="button"
+                className="primary"
+                disabled={empty}
+                onClick={() => {
+                  void copy(result.output, 'the styled post');
+                }}
+              >
+                <CopyIcon />
+                Copy styled
+              </button>
+            </div>
+            <div className="feedback">
+              <p role="status" className="status">
+                {status}
+              </p>
+              {undo !== null && (
+                <button type="button" className="undo" onClick={restoreUndo}>
+                  Undo
+                </button>
+              )}
+            </div>
           </div>
+          <p className="saved">
+            <LockIcon />
+            Saved in this browser only. Nothing you type is sent anywhere.
+          </p>
         </div>
       </div>
     </section>
