@@ -28,6 +28,18 @@ describe('draftStore', () => {
     expect(drafts.load()).toBe('');
   });
 
+  it('says whether the draft was kept', () => {
+    const storage = memoryStorage();
+    expect(draftStore(() => storage).save('x')).toBe(true);
+    expect(draftStore(() => undefined).save('x')).toBe(false);
+    const full = {
+      setItem: () => {
+        throw new DOMException('full', 'QuotaExceededError');
+      },
+    } as unknown as Storage;
+    expect(draftStore(() => full).save('x')).toBe(false);
+  });
+
   it('carries on when storage is missing or throws', () => {
     const missing = draftStore(() => undefined);
     missing.save('x');
