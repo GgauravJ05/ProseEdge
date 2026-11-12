@@ -81,12 +81,12 @@ test('with nothing selected, styling acts on the whole post and says so', async 
   const post = page.getByLabel('Post');
   await post.fill('All of it');
   await select(post, 0, 0);
-  await expect(page.locator('.scope')).toHaveText('Whole post');
+  await expect(page.locator('.scope')).toHaveText('Styling the whole post');
   await page.getByRole('button', { name: 'Bold', exact: true }).click();
   await expect(post).toHaveValue('𝐀𝐥𝐥 𝐨𝐟 𝐢𝐭');
 
   await select(post, 0, 3);
-  await expect(page.locator('.scope')).toHaveText('Selection');
+  await expect(page.locator('.scope')).toHaveText('Styling the selection');
 });
 
 test('pointing at an alphabet previews it, and Escape leaves the post as it was', async ({
