@@ -115,8 +115,10 @@ measures.
 - **Phase 3 (data landed):** the full Hacker News history is collected — 238
   monthly snapshots, 4,727,774 stories — with the collector (#8), stratified
   pairing with time splits and leak checks (#29, ADR 0006) and every manifest
-  (#30) on `main`. Next: choose the real train / validation / test boundaries
-  over that history, then the four §5.2 baselines.
+  (#30) on `main`. Split boundaries are fixed (ADR 0011): train 2007-01 to
+  2024-07, validation 2024-08 to 2025-07, test 2025-08 to 2026-07, giving
+  1,783,102 / 134,626 / 143,464 pairs with every leak check passing. Next: the
+  four §5.2 baselines.
 - **Phase 4:** teacher model; it must beat TF-IDF on the time split.
 - **Phase 5:** distillation, ONNX export with a parity check, INT8, and the
   size/accuracy/latency table.
@@ -139,12 +141,12 @@ card, and documentation. If time runs short, M5 and M6 are cut before M3 or M4.
 
 ## Lanes at a glance
 
-|       | Web app                             | Research                                                   |
-| :---- | :---------------------------------- | :--------------------------------------------------------- |
-| Done  | M1 formatter, M2 structure and fold | Collection, pairing and manifests on `main`                |
-| Now   | v0.1.0 release                      | Split boundaries over the full history, then the baselines |
-| Next  | M3 accessibility study              | Start the VoiceOver and NVDA recordings; teacher model     |
-| Later | M4 UI behind flags                  | Compression, browser runtime                               |
+|       | Web app                             | Research                                               |
+| :---- | :---------------------------------- | :----------------------------------------------------- |
+| Done  | M1 formatter, M2 structure and fold | Collection, pairing and manifests on `main`            |
+| Now   | v0.1.0 release                      | The four §5.2 baselines on the fixed splits (ADR 0011) |
+| Next  | M3 accessibility study              | Start the VoiceOver and NVDA recordings; teacher model |
+| Later | M4 UI behind flags                  | Compression, browser runtime                           |
 
 ## Risks
 
