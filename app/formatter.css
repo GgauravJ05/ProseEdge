@@ -24,8 +24,9 @@
 }
 
 /* The header links to this page; on this page that link goes nowhere. */
-body:has(.format-page) .nav-cta {
-  display: none;
+body:has(.format-page) .site-nav > span:has(> .nav-cta) {
+  /* !important: Magnetic sets its display inline. */
+  display: none !important;
 }
 
 .format-head {

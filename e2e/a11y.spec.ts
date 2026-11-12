@@ -174,3 +174,23 @@ test('unknown addresses get a 404 page with a way back', async ({ page }) => {
   await page.getByRole('link', { name: 'Back to the formatter' }).click();
   await expect(page.getByLabel('Post')).toBeVisible();
 });
+
+for (const path of ['/', '/format']) {
+  test(`every keyboard stop on ${path} is a visible, named control`, async ({ page }) => {
+    await page.goto(path);
+    await page.waitForLoadState('networkidle');
+    const silent: string[] = [];
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press('Tab');
+      const stop = await page.evaluate(() => {
+        const el = document.activeElement;
+        if (el === null || el === document.body) return null;
+        const box = el.getBoundingClientRect();
+        const interactive = el.matches('a, button, input, textarea, select, [role]');
+        return { html: el.outerHTML.slice(0, 80), ok: interactive && box.width > 0 };
+      });
+      if (stop !== null && !stop.ok) silent.push(stop.html);
+    }
+    expect(silent).toEqual([]);
+  });
+}

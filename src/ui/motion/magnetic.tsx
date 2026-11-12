@@ -46,6 +46,9 @@ export function Magnetic({
     <m.span
       className={className}
       style={{ display: 'inline-flex', x: springX, y: springY }}
+      // `whileTap` makes its element focusable unless told otherwise. The control
+      // inside is the keyboard stop, so the wrapper must not be a second one.
+      tabIndex={-1}
       whileTap={{ scale: PRESS_SCALE }}
       onPointerMove={lean}
       onPointerLeave={settle}
