@@ -80,6 +80,9 @@ const EXAMPLE = [
   `${inStyle('Apply by Friday', specimenOf('sans_italic'))}, or send this to someone who should.`,
 ].join('\n');
 
+/** How long a copy button shows its check mark. */
+const COPIED_MS = 1600;
+
 /** Below this, a Flesch–Kincaid grade swings too much to be worth showing. */
 const READING_MIN_WORDS = 20;
 
@@ -166,6 +169,7 @@ export function Editor() {
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const pending = useRef<Selection | null>(null);
   const [status, setStatus] = useState('');
+  const [justCopied, setJustCopied] = useState<string | null>(null);
   /*
    * The two actions that throw work away can be taken back. People explore
    * more freely when a mistake costs one click, not their post.
@@ -399,10 +403,23 @@ export function Editor() {
     emphasize(key === 'b' ? 'bold' : 'italic', false);
   };
 
+  const copied = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(
+    () => () => {
+      clearTimeout(copied.current);
+    },
+    [],
+  );
+
   const copy = async (text: string, what: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setStatus(`Copied ${what}.`);
+      setJustCopied(what);
+      clearTimeout(copied.current);
+      copied.current = setTimeout(() => {
+        setJustCopied(null);
+      }, COPIED_MS);
     } catch {
       setStatus('Copying was blocked. Select the text and copy it yourself.');
     }
@@ -748,7 +765,7 @@ export function Editor() {
                 </p>
               ) : (
                 <>
-                  <HearPanel output={shown.output} />
+                  <HearPanel output={shown.output} words={stats.words} />
                   {stats.styled > 0 && (
                     <p className="listen-note warn">
                       <WarningIcon />
@@ -872,22 +889,24 @@ export function Editor() {
             <button
               type="button"
               disabled={empty}
+              data-copied={justCopied === 'plain text'}
               onClick={() => {
                 void copy(plain, 'plain text');
               }}
             >
-              <PlainTextIcon />
+              {justCopied === 'plain text' ? <CheckIcon /> : <PlainTextIcon />}
               Copy plain text
             </button>
             <button
               type="button"
               className="primary"
               disabled={empty}
+              data-copied={justCopied === 'the styled post'}
               onClick={() => {
                 void copy(result.output, 'the styled post');
               }}
             >
-              <CopyIcon />
+              {justCopied === 'the styled post' ? <CheckIcon /> : <CopyIcon />}
               Copy styled
             </button>
           </div>
