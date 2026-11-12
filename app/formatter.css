@@ -676,16 +676,24 @@ body:has(.format-page) .nav-cta {
   color: var(--muted);
 }
 
-.studio .status-row {
-  grid-column: 1 / -1;
+/* Wide screens lay the bar's parts straight into the dock's grid. */
+.studio .dock-bar {
+  display: contents;
+}
+
+.studio .feedback {
+  grid-row: 2;
+  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1rem;
-  min-height: 1.5rem;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
 }
 
 .studio .saved {
+  grid-row: 2;
+  grid-column: 1;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -695,7 +703,7 @@ body:has(.format-page) .nav-cta {
 }
 
 .studio .status {
-  margin: 0 0 0 auto;
+  margin: 0;
   font-size: 0.88rem;
   font-weight: 600;
 }
@@ -706,6 +714,69 @@ body:has(.format-page) .nav-cta {
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* Stacked: the copy buttons stay in reach ---------------------------------- */
+
+/*
+ * Stacked, the buttons the whole page leads to sit below the post and its
+ * checks, about two phone screens down. Below the 70rem layout they pin to the
+ * bottom of the viewport while there is a post to copy, or an Undo to reach.
+ *
+ * Sticky is bounded by the parent's box, so the dock gives up its own: the bar
+ * then travels the whole sheet. An on-screen keyboard covers the layout
+ * viewport's bottom, so the bar waits behind it rather than over the text.
+ */
+@media (max-width: 69.99rem) {
+  html:has(.format-page) {
+    scroll-padding-bottom: 7rem;
+  }
+
+  .studio .dock {
+    display: contents;
+  }
+
+  .studio .dock .hint {
+    max-width: none;
+    padding: 1rem var(--sheet-pad) 0.75rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .studio .dock-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    padding: 0.625rem var(--sheet-pad) calc(0.625rem + env(safe-area-inset-bottom));
+    border-block: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .studio .dock[data-idle='true'] .dock-bar {
+    position: static;
+  }
+
+  .studio .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .studio .actions button {
+    flex: 1 1 0;
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+
+  .studio .feedback {
+    justify-content: space-between;
+  }
+
+  .studio .saved {
+    padding: 0.75rem var(--sheet-pad) 1.25rem;
+  }
 }
 
 /* Wide screens: write on the left, hear it on the right ------------------- */
@@ -836,19 +907,6 @@ body:has(.format-page) .nav-cta {
 
   .studio .try-example {
     top: 4.5rem;
-  }
-
-  .studio .dock {
-    grid-template-columns: 1fr;
-  }
-
-  .studio .actions button {
-    flex: 1 1 auto;
-    justify-content: center;
-  }
-
-  .studio .status {
-    margin-left: 0;
   }
 }
 
