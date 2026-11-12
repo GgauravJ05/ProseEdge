@@ -32,6 +32,10 @@ body:has(.format-page) .nav-cta {
   margin-block-end: 1.5rem;
 }
 
+.editor-loading {
+  min-height: min(70vh, 40rem);
+}
+
 .format-head h1 {
   margin: 1rem 0 0.4rem;
   font-size: 2.25rem;
@@ -695,9 +699,14 @@ body:has(.format-page) .nav-cta {
 }
 
 .studio .status {
+  color: var(--ink);
   margin: 0 0 0 auto;
   font-size: 0.88rem;
   font-weight: 600;
+}
+
+.studio .status[data-tone='error'] {
+  color: var(--accent);
 }
 
 .studio .undo {
