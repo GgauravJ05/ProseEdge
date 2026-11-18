@@ -132,3 +132,23 @@ test('on a wide screen the checks sit beside the post and stay in view', async (
   await page.mouse.wheel(0, 600);
   await expect(checks.getByRole('heading', { name: 'Checks' })).toBeInViewport();
 });
+
+for (const width of [375, 390]) {
+  test.describe(`a phone ${String(width)}px wide`, () => {
+    test.use({ viewport: { width, height: 800 }, hasTouch: true, isMobile: true });
+
+    test('the toolbar leaves the post near the top', async ({ page }) => {
+      await page.goto('/format');
+      const toolbar = await page.locator('.toolbar').boundingBox();
+      // Two rows of 44 px controls and one line saying what they act on.
+      expect(toolbar?.height ?? 999).toBeLessThanOrEqual(135);
+    });
+  });
+}
+
+test('what the styling buttons act on reads as words, not as another button', async ({ page }) => {
+  await page.goto('/format');
+  const scope = page.locator('.scope');
+  await expect(scope).toHaveCSS('border-top-width', '0px');
+  await expect(scope).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
