@@ -7,7 +7,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 
 import { DECORATION_MARKS, styledCodepoints } from '../document';
-import { announce, announceText, characterName, namedCount } from './transcript';
+import { announce, announceText, characterName, namedCount, spokenWords } from './transcript';
 
 /** Character names from the UnicodeData excerpt the alphabet tests already use. */
 const names = new Map<number, string>();
@@ -77,5 +77,19 @@ describe('announce', () => {
   it('counts every styled codepoint as one named character', () => {
     expect(namedCount('𝗪𝗲’𝗿𝗲 𝗵𝗶𝗿𝗶𝗻𝗴')).toBe(10);
     expect(namedCount('a̲b̲')).toBe(2);
+  });
+});
+
+describe('spokenWords', () => {
+  it('counts plain words as written and each named character by its name', () => {
+    expect(spokenWords('plain words here')).toBe(3);
+    // "mathematical bold capital a", then the plain "b".
+    expect(spokenWords('𝐀b')).toBe(5);
+    expect(spokenWords('')).toBe(0);
+  });
+
+  it('does not count punctuation as a word', () => {
+    // Two names of four words each, and an apostrophe between them.
+    expect(spokenWords('𝐀’𝐁')).toBe(8);
   });
 });

@@ -125,3 +125,33 @@ test.describe('on a phone', () => {
     expect(checks?.y ?? 0).toBeLessThan(copy?.y ?? 0);
   });
 });
+
+test('the length meter fills from its left edge', async ({ page }) => {
+  await page.goto('/format');
+  await page.getByRole('button', { name: 'Try an example' }).click();
+  const track = await page.locator('.budget .meter').boundingBox();
+  const fill = await page.locator('.budget .meter-fill').boundingBox();
+  expect(Math.abs((fill?.x ?? 999) - (track?.x ?? 0))).toBeLessThanOrEqual(1.5);
+});
+
+test('the read-out opens by saying how much longer the post may become', async ({ page }) => {
+  await page.goto('/format');
+  const post = page.getByLabel('Post');
+  await post.fill('𝐀 plain word');
+  await expect(page.locator('.hear-lead')).toHaveText(
+    'If a screen reader uses Unicode names, these 3 words may become 6.',
+  );
+  await expect(page.locator('.listen')).not.toContainText('//');
+  await post.fill('Nothing styled');
+  await expect(page.locator('.hear-lead')).toHaveCount(0);
+});
+
+test('a copy button confirms with a check mark, then goes back', async ({ page }) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/format');
+  await page.getByLabel('Post').fill('A post');
+  const button = page.getByRole('button', { name: 'Copy styled' });
+  await button.click();
+  await expect(button).toHaveAttribute('data-copied', 'true');
+  await expect(button).not.toHaveAttribute('data-copied', 'true', { timeout: 4000 });
+});
