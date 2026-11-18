@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Gaurav Jadhav <gauravmakarandjadhav@gmail.com>
 
 import { expect, test } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { select } from './helpers';
 
@@ -120,8 +121,64 @@ test.describe('on a phone', () => {
     await page.goto('/format');
     const post = await page.getByLabel('Post').boundingBox();
     const checks = await page.getByRole('region', { name: 'Checks' }).boundingBox();
-    const copy = await page.getByRole('button', { name: 'Copy styled' }).boundingBox();
     expect(checks?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0));
-    expect(checks?.y ?? 0).toBeLessThan(copy?.y ?? 0);
+    // Reading and tab order, since the copy buttons can be pinned over the page.
+    const follows = await page.evaluate(() => {
+      const listen = document.querySelector('.listen');
+      const copy = document.querySelector('.actions .primary');
+      if (listen === null || copy === null) return false;
+      return Boolean(listen.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(follows).toBe(true);
   });
+
+  const inView = (locator: Locator, page: Page) =>
+    locator.evaluate((el, height) => {
+      const box = el.getBoundingClientRect();
+      return box.top >= 0 && box.bottom <= height;
+    }, page.viewportSize()?.height ?? 0);
+
+  test('the copy buttons stay in reach while there is a post to copy', async ({ page }) => {
+    await page.goto('/format');
+    const copy = page.getByRole('button', { name: 'Copy styled' });
+    await page.getByRole('button', { name: 'Try an example' }).click();
+    expect(await inView(copy, page)).toBe(true);
+    await page.mouse.wheel(0, 500);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    expect(await inView(copy, page)).toBe(true);
+  });
+
+  test('an empty post pins nothing, since there is nothing to copy', async ({ page }) => {
+    await page.goto('/format');
+    const bar = page.locator('.dock-bar');
+    await expect(bar).toHaveCSS('position', 'static');
+  });
+
+  test('copy confirmation and undo show up beside the pinned buttons', async ({ page }) => {
+    await page.goto('/format');
+    await page.getByRole('button', { name: 'Try an example' }).click();
+    await page.getByRole('button', { name: 'Clear post' }).click();
+    const undo = page.getByRole('button', { name: 'Undo' });
+    await expect(undo).toBeVisible();
+    expect(await inView(undo, page)).toBe(true);
+    await undo.click();
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.getByRole('button', { name: 'Copy styled' }).click();
+    const status = page.getByRole('status');
+    await expect(status).toHaveText('Copied the styled post.');
+    expect(await inView(status, page)).toBe(true);
+  });
+});
+
+test('editing clears the copy confirmation, which no longer describes the post', async ({
+  page,
+}) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/format');
+  const post = page.getByLabel('Post');
+  await post.fill('A post');
+  await page.getByRole('button', { name: 'Copy styled' }).click();
+  await expect(page.getByRole('status')).toHaveText('Copied the styled post.');
+  await post.fill('A longer post');
+  await expect(page.locator('.status')).toBeEmpty();
 });
