@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Gaurav Jadhav <gauravmakarandjadhav@gmail.com>
 
 import { expect, test } from '@playwright/test';
+import type { Locator } from '@playwright/test';
 
 import { select } from './helpers';
 
@@ -124,4 +125,79 @@ test.describe('on a phone', () => {
     expect(checks?.y ?? 0).toBeGreaterThan((post?.y ?? 0) + (post?.height ?? 0));
     expect(checks?.y ?? 0).toBeLessThan(copy?.y ?? 0);
   });
+});
+
+test.describe('when the browser blocks the clipboard', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: () => Promise.reject(new DOMException('denied', 'NotAllowedError')) },
+      });
+    });
+    await page.goto('/format');
+    await page.getByLabel('Post').fill('A post');
+  });
+
+  const selected = (locator: Locator) =>
+    locator.evaluate((el: HTMLTextAreaElement) => ({
+      focused: document.activeElement === el,
+      text: el.value.slice(el.selectionStart, el.selectionEnd),
+    }));
+
+  test('Copy styled selects the post, ready to copy by hand', async ({ page }) => {
+    await page.getByRole('button', { name: 'Copy styled' }).click();
+    await expect(page.getByRole('status')).toContainText('selected');
+    expect(await selected(page.getByLabel('Post'))).toEqual({ focused: true, text: 'A post' });
+  });
+
+  test('Copy plain text opens the plain text and selects it', async ({ page }) => {
+    await page.getByLabel('Post').fill('𝐀 post');
+    await page.getByRole('button', { name: 'Copy plain text' }).click();
+    await expect(page.getByRole('status')).toContainText('selected');
+    await expect
+      .poll(() => selected(page.getByLabel('Plain text')))
+      .toEqual({
+        focused: true,
+        text: 'A post',
+      });
+  });
+});
+
+test.describe('the restore-draft prompt', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/format');
+    await page.getByLabel('Post').fill('A draft worth keeping.');
+    await page.reload();
+    await expect(page.getByRole('dialog', { name: 'Restore your last draft?' })).toBeVisible();
+  });
+
+  test('Escape keeps the draft rather than throwing it away', async ({ page }) => {
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByLabel('Post')).toHaveValue('A draft worth keeping.');
+    await expect(page.getByLabel('Post')).toBeFocused();
+  });
+
+  test('Start fresh leaves the caret in the empty post', async ({ page }) => {
+    await page.getByRole('button', { name: 'Start fresh' }).click();
+    await expect(page.getByLabel('Post')).toBeFocused();
+  });
+
+  test('Tab stays inside it', async ({ page }) => {
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Tab');
+      const inside = await page.evaluate(
+        () =>
+          document.activeElement?.closest('[role=dialog], dialog') != null ||
+          document.activeElement === document.body,
+      );
+      expect(inside).toBe(true);
+    }
+  });
+});
+
+test('without JavaScript, the formatter page says why nothing has loaded', async ({ request }) => {
+  // In the served HTML: Playwright's script switch leaves <noscript> unparsed.
+  const html = await (await request.get('/format')).text();
+  expect(html).toMatch(/<noscript><p[^>]*>The formatter needs JavaScript/u);
 });

@@ -275,20 +275,15 @@
 
 /* Restore-draft prompt ----------------------------------------------------- */
 
-.draft-prompt-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.25rem;
-  background: rgb(0 0 0 / 45%);
+.draft-prompt {
+  max-width: min(26rem, calc(100vw - 2.5rem));
+  margin: auto;
+  padding: 1.25rem 1.35rem 1.5rem;
+  color: var(--ink);
 }
 
-.draft-prompt {
-  max-width: 26rem;
-  padding: 1.25rem 1.35rem 1.5rem;
+.draft-prompt::backdrop {
+  background: rgb(0 0 0 / 45%);
 }
 
 .draft-prompt h2 {
