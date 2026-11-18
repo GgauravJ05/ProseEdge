@@ -125,3 +125,20 @@ test.describe('on a phone', () => {
     expect(checks?.y ?? 0).toBeLessThan(copy?.y ?? 0);
   });
 });
+
+test('the formatter does not claim a draft is saved when the browser refuses to keep it', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      get() {
+        throw new DOMException('blocked', 'SecurityError');
+      },
+    });
+  });
+  await page.goto('/format');
+  await page.getByLabel('Post').fill('A post');
+  await expect(page.getByText('Saved in this browser only')).toHaveCount(0);
+  await expect(page.getByText('will be lost if you reload')).toBeVisible();
+  await expect(page.getByText('Nothing you type is sent anywhere')).toBeVisible();
+});
