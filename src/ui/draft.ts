@@ -4,8 +4,8 @@
 /**
  * The draft survives a reload by living in the browser's `localStorage`. It
  * never leaves the device. Storage can be missing or throw (private windows,
- * blocked site data, a full quota); a draft is a convenience, so every failure
- * is swallowed and the editor carries on.
+ * blocked site data, a full quota); a draft is a convenience, so a failure never
+ * stops the editor, but `save` reports it so the page can stop claiming it saved.
  */
 
 export const DRAFT_KEY = 'proseedge:draft:v1';
@@ -13,7 +13,8 @@ export const DRAFT_KEY = 'proseedge:draft:v1';
 export interface DraftStore {
   /** The saved draft, `''` for a deliberately emptied post, or `null` if none was saved. */
   readonly load: () => string | null;
-  readonly save: (text: string) => void;
+  /** Whether the browser kept the draft. */
+  readonly save: (text: string) => boolean;
 }
 
 export function draftStore(storage: () => Storage | undefined): DraftStore {
@@ -27,9 +28,12 @@ export function draftStore(storage: () => Storage | undefined): DraftStore {
     },
     save: (text) => {
       try {
-        storage()?.setItem(DRAFT_KEY, text);
+        const store = storage();
+        if (store === undefined) return false;
+        store.setItem(DRAFT_KEY, text);
+        return true;
       } catch {
-        // Nothing to do: the draft simply is not kept.
+        return false;
       }
     },
   };
