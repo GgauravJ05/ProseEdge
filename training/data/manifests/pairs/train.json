@@ -1,0 +1,21 @@
+{
+  "date_from": "2007-01-01",
+  "date_to": "2024-07-31",
+  "file": "pairs/train.jsonl",
+  "filters": {
+    "boundaries": "2006-10-01T00:00:00+00:00,2007-01-01T00:00:00+00:00,2024-08-01T00:00:00+00:00,2025-08-01T00:00:00+00:00,2026-08-01T00:00:00+00:00",
+    "decile_edges": "1,4,11,24,48,99,225,598,2067",
+    "excluded_reposts": "0",
+    "inputs_sha256": "7bc69deaeb60a02b0efe61153676c3c97c4e91b2a3ce78418046379bffd65676",
+    "margin": "4",
+    "max_pairs_per_post": "3",
+    "posts": "4091821",
+    "seed": "0",
+    "split": "train",
+    "winner_floor": "10"
+  },
+  "format": 1,
+  "rows": 1783102,
+  "sha256": "6493e8f54b484a98129b76ed4ae26e1de96592dd60876b154a71fa77e97690f5",
+  "source": "stratified-pairs"
+}
